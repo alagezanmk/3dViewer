@@ -1,0 +1,85 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:_3DViewer.ViewModel"
+        xmlns:WPF="clr-namespace:SharpGL.WPF;assembly=SharpGL.WPF" xmlns:SceneTree="clr-namespace:SharpGL.WPF.SceneTree;assembly=SharpGL.WPF" x:Class="_3DViewer.MainWindow"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Images.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Window.DataContext>
+        <local:GLViewModel/>
+    </Window.DataContext>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="267*"/>
+            <ColumnDefinition Width="47*"/>
+            <ColumnDefinition Width="37*"/>
+            <ColumnDefinition Width="18*"/>
+            <ColumnDefinition Width="424*"/>
+        </Grid.ColumnDefinitions>
+        <Ribbon Margin="0,-25,0,-7.333" Grid.ColumnSpan="5">
+
+            <RibbonTab Header="Home" Height="91" Margin="0,0,-2.667,-4.333">
+                <RibbonGroup Header="STL File" Height="87" Margin="0" VerticalAlignment="Top" Width="117">
+                    <RibbonButton x:Name="stlFileOpen" Label="Open" KeyTip="X" Height="Auto" Margin="0,3,-47.333,-65.667" 
+                                  LargeImageSource="imgs\open-file.ico" Width="50" MinWidth="50" 
+                                  Command="{Binding FileOpenCommand}" 
+                                  HorizontalAlignment="Left"/>
+                    <RibbonButton x:Name="stlFileSave" Label="Save" Margin="53,0,-91.667,-65" 
+                                  LargeImageSource="imgs\save.png" Height="Auto" RenderTransformOrigin="0.5,0.5" 
+                                  Command="{Binding FileSaveCommand}"
+                                  MinWidth="50" HorizontalAlignment="Left" Width="50">
+                        <RibbonButton.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform/>
+                                <SkewTransform AngleY="-0.463"/>
+                                <RotateTransform/>
+                                <TranslateTransform Y="-0.214"/>
+                            </TransformGroup>
+                        </RibbonButton.RenderTransform>
+                    </RibbonButton>
+                </RibbonGroup>
+                <RibbonGroup Header="XML File" Height="87" Margin="0" VerticalAlignment="Top" Width="114">
+                    <RibbonButton x:Name="xmlFileExport" Content="" Margin="0,0,-4,-63" Height="68" Label="Export" 
+                                  LargeImageSource="imgs\XMLExport.png" 
+                                  Command="{Binding XmlExportCommand}"
+                                  Width="46"/>
+                    <RibbonButton Content="RibbonButton" HorizontalAlignment="Left" Label="Import" 
+                                  Command="{Binding XmlImportCommand}"
+                                  Margin="52,-3,-102,-33" Width="50" Height="66" LargeImageSource="imgs\XMLImport.png"/>
+                </RibbonGroup>
+                <RibbonGroup Header="Projection" Height="87" Margin="0,0,0,-0.333" VerticalAlignment="Top" Width="86">
+                    <RibbonButton x:Name="Projection" Content="" HorizontalAlignment="Left" Margin="0,0,-73,-63" 
+                                  VerticalAlignment="Top" Width="74" Height="67" Label="Perpspective" 
+                                  Command="{Binding TogglePerspectiveCommand}" 
+                                  LargeImageSource="imgs\perpective.png"/>
+                </RibbonGroup>
+
+                <RibbonGroup Header="Application" Height="87" Margin="0,2,0,1.667" Width="467">
+                    <RibbonButton Content="RibbonButton" HorizontalAlignment="Left" Margin="0,0,-179.333,-66" 
+                                  VerticalAlignment="Top" Width="50" Height="66" Label="Quit" 
+                                  LargeImageSource="imgs\quit.png"
+                                  Command="{Binding CloseAppCommand}"/>
+
+                </RibbonGroup>
+
+            </RibbonTab>
+        </Ribbon>
+        <WPF:OpenGLControl x:Name="ogl" Margin="0,115,0.682,-7.333" Grid.ColumnSpan="5" 
+                           RenderContextType="FBO" 
+                           OpenGLDraw="ogl_OpenGLDraw" 
+                           OpenGLInitialized="ogl_OpenGLInitialized" 
+                                    MouseWheel="ogl_MouseWheel" 
+                                    MouseMove="ogl_MouseMove" 
+                                    MouseDown="ogl_MouseDown" 
+                                    MouseUp="ogl_MouseUp"/>
+    </Grid>
+</Window>
