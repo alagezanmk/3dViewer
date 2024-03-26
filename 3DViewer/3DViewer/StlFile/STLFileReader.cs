@@ -243,6 +243,16 @@ namespace _3DViewer.File
                     byte[] header = binaryReader.ReadBytes(80);
                     this.model.name = System.Text.Encoding.UTF8.GetString(header, 0, header.Length);
 
+                    // transcate at \0
+                    for(int i = 0; i < this.model.name.Length; i++)
+                    {
+                        if ('\0' == this.model.name[i])
+                        {
+                            this.model.name = this.model.name.Substring(0, i);
+                            break;
+                        }
+                    }
+
                     uint facetCount = binaryReader.ReadUInt32();
 
                     for (int f = 0; f < facetCount; f++)
