@@ -9,9 +9,7 @@ namespace _3DViewer.View
 {
     class GLView
     {
-        View.MouseControl mouseControl = new View.MouseControl();
-
-        Color modelColor { get; set; }
+        View.GLCamera camera = new View.GLCamera();
 
         bool modelReady = false;
         Model.Vector3 minPos = new Model.Vector3();
@@ -27,7 +25,6 @@ namespace _3DViewer.View
 
         public GLView()
         {
-            this.modelColor = Color.Aqua;
             this.compassPosition.x = 10;
             this.compassPosition.y = 5;
             this.compassPosition.z = 0;
@@ -77,27 +74,28 @@ namespace _3DViewer.View
 
         public void initializeLighting(OpenGL gl)
         {
+            Color color = Color.White;
             float[] light_1 = new float[] 
             {
-                0.2f * this.modelColor.R / 255.0f,
-                0.2f * this.modelColor.G / 255.0f,
-                0.2f * this.modelColor.B / 255.0f,
+                0.2f * color.R / 255.0f,
+                0.2f * color.G / 255.0f,
+                0.2f * color.B / 255.0f,
                 1.0f 
             };
 
             float[] light_2 = new float[] 
             {
-                10.0f * modelColor.R / 255.0f,
-                10.0f * modelColor.G / 255.0f,
-                10.0f * modelColor.B / 255.0f,
+                10.0f * color.R / 255.0f,
+                10.0f * color.G / 255.0f,
+                10.0f * color.B / 255.0f,
                 1.0f 
             };
 
             float[] specref = new float[] 
             {
-                0.2f * modelColor.R / 255.0f,
-                0.2f * modelColor.G / 255.0f,
-                0.2f * modelColor.B / 255.0f,
+                0.2f * color.R / 255.0f,
+                0.2f * color.G / 255.0f,
+                0.2f * color.B / 255.0f,
                 1.0f 
             };
 
@@ -153,7 +151,7 @@ namespace _3DViewer.View
                 gl.Ortho(-this.sizeRatio * size, this.sizeRatio * size, -size, size, -100, 100);
             }
 
-            gl.MatrixMode(OpenGL.GL_MODELVIEW);                    // Select The Modelview Matrix
+            gl.MatrixMode(OpenGL.GL_MODELVIEW); 
             gl.LoadIdentity();
         }
 
@@ -215,7 +213,6 @@ namespace _3DViewer.View
 
         public void drawAxes(OpenGL gl, float size = 1000.0f)
         {
-            /* WCS for Debug X+ = Red, Y+ = Green, Z+ = Blue */
             float wcsSize = 1000.0f;
 
             gl.PushAttrib(SharpGL.Enumerations.AttributeMask.ColorBuffer);
@@ -293,12 +290,12 @@ namespace _3DViewer.View
             gl.PushAttrib(SharpGL.Enumerations.AttributeMask.ColorBuffer);
             gl.LineWidth(1.0f);
 
-            this.compassPosition.x = 10;
+            this.compassPosition.x = 5;
             this.compassPosition.y = 3;
             this.compassPosition.z = 0;
             gl.Translate(this.compassPosition.x, this.compassPosition.y, this.compassPosition.z);
 
-            this.mouseControl.RotateTransform(gl);
+            this.camera.RotateTransform(gl);
 
             // Draw Base arc
             float o = .2f;
@@ -388,7 +385,7 @@ namespace _3DViewer.View
             gl.EnableClientState(OpenGL.GL_VERTEX_ARRAY);
             gl.EnableClientState(OpenGL.GL_NORMAL_ARRAY);
 
-            //gl.VertexPointer(3, OpenGL.GL_FLOAT, 0, vertexes);
+            Color modelColor = Color.Beige;
             gl.VertexPointer(3, 0, vertexes);
             gl.Color(modelColor.R / 255.0, modelColor.G / 255.0, modelColor.B / 255.0);
             gl.NormalPointer(OpenGL.GL_FLOAT, 0, normals);
@@ -403,6 +400,7 @@ namespace _3DViewer.View
         public void Draw(Control view, OpenGL gl)
         {
             this.initializeGL(view, gl);
+            this.initializeLighting(gl);
 
             gl.InitNames();
             gl.PushName(0);
@@ -420,19 +418,29 @@ namespace _3DViewer.View
             //tp.Draw(gl, 5, .75, OpenGL.GL_FILL);
 
             this.drawCompass(gl);
-            this.mouseControl.Transform(gl);
-
+            this.camera.Transform(gl);
 
             // Matrix test ----------
-            double[] matrix1 = new double[16];
-            gl.GetDouble(OpenGL.GL_MODELVIEW_MATRIX, matrix1);
+            if (this.bHitTest)
+            {
+                double[] matrix1 = new double[16];
+                gl.GetDouble(OpenGL.GL_PROJECTION_MATRIX, matrix1);
 
-            SharpGL.SceneGraph.Matrix m = SharpGL.SceneGraph.Matrix.FromRowMajorArray(matrix1, 4, 4);
-            SharpGL.SceneGraph.Matrix im = SharpGL.SceneGraph.Matrix.Inverse(m);
+                gl.LoadIdentity();
+                int i = 0;
+                GlmNet.vec4[] vecs = new GlmNet.vec4[4];
+                for (int v = 0; v < 4; v++)
+                {
+                    vecs[v].x = (float)matrix1[i++];
+                    vecs[v].y = (float)matrix1[i++];
+                    vecs[v].z = (float)matrix1[i++];
+                    vecs[v].w = (float)matrix1[i++];
+                }
 
-            double[] matrix = m.AsColumnMajorArray;
-            gl.LoadMatrix(matrix);
-            /// ------------------
+                GlmNet.mat4 mat4 = new GlmNet.mat4(vecs);
+                GlmNet.vec4 vPos = new GlmNet.vec4(this.hx, this.hy, 0, 0);
+                GlmNet.vec4 glPos = mat4 * vPos;
+            }/// ------------------
 
             this.drawModel(gl, .08f);
 
@@ -443,8 +451,13 @@ namespace _3DViewer.View
             //rotation += 3.0f;
         }
 
+        bool bHitTest = false;
+        float hx, hy;
         bool hitTest(Control view, OpenGL gl, double x, double y)
         {
+            this.bHitTest = true;
+            this.hx = (float)x;
+            this.hy = (float)y;
             const int BUFFER_LENGTH = 64;
             uint[] selectBuff = new uint[BUFFER_LENGTH];
 
@@ -468,7 +481,7 @@ namespace _3DViewer.View
                 gl.Perspective(45, this.sizeRatio, .1, 100);
                 this.Draw(view, gl);
 
-                hits = gl.RenderMode(OpenGL.GL_RENDER);
+                gl.RenderMode(OpenGL.GL_RENDER);
                 if (hits > 0)
                 {
                     uint count = selectBuff[0];
@@ -485,6 +498,7 @@ namespace _3DViewer.View
                 gl.MatrixMode(OpenGL.GL_MODELVIEW);
             } while (false);
 
+            this.bHitTest = false;
             return success;
         }
 
@@ -493,22 +507,22 @@ namespace _3DViewer.View
             if (this.hitTest(view, gl, pos.X, pos.Y))
                 return;
 
-            this.mouseControl.OnMouseDown(pos, leftButton, rightButton);
+            this.camera.OnMouseDown(pos, leftButton, rightButton);
         }
 
         public void OnMouseUp(System.Windows.Point pos, bool leftButton, bool rightButton)
         {
-            this.mouseControl.OnMouseUp(pos, leftButton, rightButton);
+            this.camera.OnMouseUp(pos, leftButton, rightButton);
         }
 
         public void OnMouseMove(System.Windows.Point pos, double cx, double cy)
         {
-            this.mouseControl.OnMouseMove(pos, cx, cy);
+            this.camera.OnMouseMove(pos, cx, cy);
         }
 
         public void OnMouseWheel(int delta)
         {
-            this.mouseControl.OnMouseWheel(delta);
+            this.camera.OnMouseWheel(delta);
         }
     }
 }
