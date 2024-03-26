@@ -17,16 +17,14 @@ namespace _3DViewer.View
         float[] normals { get; set; }
         float[] vertexes { get; set; }
 
-        public enum Ortho_Mode { CENTER, BLEFT };
-
         public bool Perspective = true;
         bool propertyChanged = true;
         Vector3 compassPosition = new Vector3();
 
         public GLView()
         {
-            this.compassPosition.x = 10;
-            this.compassPosition.y = 5;
+            this.compassPosition.x = 5;
+            this.compassPosition.y = 3;
             this.compassPosition.z = 0;
         }
 
@@ -45,8 +43,34 @@ namespace _3DViewer.View
         {
             this.propertyChanged = true;
         }
-        public void initializeDraw(OpenGL gl, Control view, Ortho_Mode ortho)
+
+        double viewWidth, viewHeight;
+        double sizeRatio = 1;
+        public void initializeGL(OpenGL gl, Control view)
         {
+            //if (false == this.propertyChanged)
+              //  return;
+
+            this.propertyChanged = false;
+
+            this.viewWidth = view.Width;
+            this.viewHeight = view.Height;
+            if (0 == this.viewHeight)
+                this.viewHeight = 1;
+
+            this.sizeRatio = this.viewWidth / this.viewHeight;
+            gl.Viewport(0, 0, (int)this.viewWidth, (int)this.viewHeight);
+
+            gl.MatrixMode(OpenGL.GL_PROJECTION);
+            gl.LoadIdentity();
+
+            if (this.Perspective)
+                gl.Perspective(45, this.sizeRatio, .1, 100);
+            else
+                gl.Ortho(-view.Width / 2, view.Width / 2, -view.Height / 2, view.Height / 2, -20000, +20000);                    
+
+            gl.MatrixMode(OpenGL.GL_MODELVIEW);
+            gl.LoadIdentity();
             gl.ClearColor(0, 0, 0, 0);
 
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT);
@@ -54,13 +78,6 @@ namespace _3DViewer.View
             gl.BlendFunc(OpenGL.GL_SRC_ALPHA, OpenGL.GL_ONE_MINUS_SRC_ALPHA);
 
             gl.ClearColor(0, 0, 0, 0);
-            gl.MatrixMode(OpenGL.GL_MODELVIEW);
-            gl.LoadIdentity();
-            gl.Viewport(0, 0, (int)view.Width, (int)view.Height);
-            if (ortho == Ortho_Mode.CENTER)
-                gl.Ortho(-view.Width / 2, view.Width / 2, -view.Height / 2, view.Height / 2, -20000, +20000);
-            else
-                gl.Ortho(0, view.Width, 0, view.Height, -20000, +20000);
 
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
             gl.ClearDepth(1.0f);
@@ -70,6 +87,35 @@ namespace _3DViewer.View
             gl.Hint(OpenGL.GL_PERSPECTIVE_CORRECTION_HINT, OpenGL.GL_NICEST);
             gl.Enable(OpenGL.GL_LINE_SMOOTH);
             gl.Hint(OpenGL.GL_LINE_SMOOTH_HINT, OpenGL.GL_NICEST);
+
+            this.matrix();
+        }
+
+        GlmNet.mat4 projectionViewMatrix = new GlmNet.mat4();
+        GlmNet.mat4 cameraViewMatrix = new GlmNet.mat4();
+        GlmNet.mat4 modelMatrix = new GlmNet.mat4();
+        GlmNet.mat4 pvmMatrixO2S = new GlmNet.mat4(); // Object to Screen
+        GlmNet.mat4 pvMatrixO2S = new GlmNet.mat4(); // view Object to screen
+
+        //GlmNet.mat4 mvpMatrixO2S = new GlmNet.mat4(); // Object to Screen
+
+        void matrix()
+        {
+            // Perspective Projection
+            this.projectionViewMatrix = GlmNet.glm.perspective(GlmNet.glm.radians(45.0f),
+                                                     (float)this.sizeRatio, .1f, 100f);
+
+            // Camera matrix
+            this.cameraViewMatrix = GlmNet.glm.lookAt(new GlmNet.vec3(4, 3, 3),   // Camera is at (4,3,3), in World Space
+                                                      new GlmNet.vec3(0, 0, 0),   // and looks at the origin
+                                                      new GlmNet.vec3(0, 1, 0));  // Head is up (set to 0,-1,0 to look upside-down)
+
+            // Model matrix: an identity matrix (model will be at the origin)
+            this.modelMatrix = new GlmNet.mat4(1.0f);
+
+            // Vec_screen = Mat_projection x Mat_view x Mat_model x Vec_local/Object
+            this.pvmMatrixO2S = this.projectionViewMatrix * this.cameraViewMatrix * this.modelMatrix;
+            this.pvMatrixO2S = this.projectionViewMatrix * this.cameraViewMatrix;
         }
 
         public void initializeLighting(OpenGL gl)
@@ -123,36 +169,6 @@ namespace _3DViewer.View
             gl.Material(OpenGL.GL_FRONT, OpenGL.GL_SPECULAR, specref);
             gl.Material(OpenGL.GL_FRONT, OpenGL.GL_SHININESS, 10);
             gl.Enable(OpenGL.GL_NORMALIZE);
-        }
-
-        double sizeRatio = 1;
-        public void initializeGL(Control view, OpenGL gl)
-        {
-            if (false == this.propertyChanged)
-                return;
-
-            this.propertyChanged = false;
-            int viewWidth = (int)view.Width;
-            int viewHeight = (int)view.Height;
-            if (0 == viewHeight)
-                viewHeight = 1;
-
-            gl.Viewport(0, 0, viewWidth, viewHeight);
-
-            gl.MatrixMode(OpenGL.GL_PROJECTION);
-            gl.LoadIdentity();
-
-            this.sizeRatio = viewWidth / (double)viewHeight;
-            if (this.Perspective)
-                gl.Perspective(45, this.sizeRatio, .1, 100);
-            else
-            {
-                double size = 1.5;
-                gl.Ortho(-this.sizeRatio * size, this.sizeRatio * size, -size, size, -100, 100);
-            }
-
-            gl.MatrixMode(OpenGL.GL_MODELVIEW); 
-            gl.LoadIdentity();
         }
 
         public void drawCube(OpenGL gl, float size)
@@ -281,6 +297,20 @@ namespace _3DViewer.View
                 gl.Vertex(cx, cy + x, cz + y);
             }
         }
+
+        void test(OpenGL gl)
+        {
+            GlmNet.mat4 m = this.getModelMatrix(gl);
+            //GlmNet.mat4 m = this.getModelMatrix(gl, OpenGL.GL_);
+            GlmNet.mat4 o2s = this.pvMatrixO2S * m;
+            //o2s = m2;
+            GlmNet.mat4 s2o = GlmNet.glm.inverse(o2s);
+            GlmNet.vec4 sv = new GlmNet.vec4((float)((this.viewWidth - 10) / this.viewWidth), (float)(10 / this.viewHeight), 0, 1);
+
+            GlmNet.vec4 ov = s2o * sv;
+            GlmNet.vec4 ov1 = o2s * sv;
+        }
+
         const int compassId = 1;
         public void drawCompass(OpenGL gl)
         {
@@ -290,12 +320,12 @@ namespace _3DViewer.View
             gl.PushAttrib(SharpGL.Enumerations.AttributeMask.ColorBuffer);
             gl.LineWidth(1.0f);
 
+            this.test(gl);
             this.compassPosition.x = 5;
-            this.compassPosition.y = 3;
+            this.compassPosition.y = .5f;
             this.compassPosition.z = 0;
             gl.Translate(this.compassPosition.x, this.compassPosition.y, this.compassPosition.z);
-
-            this.camera.RotateTransform(gl);
+            this.camera.RotateTransform(gl); // Rotate at fixed compass position along camera origin
 
             // Draw Base arc
             float o = .2f;
@@ -396,11 +426,27 @@ namespace _3DViewer.View
             gl.PopMatrix();            
         }
 
+        GlmNet.mat4 getModelMatrix(OpenGL gl, uint type = OpenGL.GL_MODELVIEW_MATRIX)
+        {
+            float[] _m = new float[16];
+            gl.GetFloat(type, _m);
+
+            GlmNet.mat4 m = new GlmNet.mat4(new GlmNet.vec4(_m[0], _m[1], _m[2], _m[3]),
+                                            new GlmNet.vec4(_m[4], _m[5], _m[6], _m[7]),
+                                            new GlmNet.vec4(_m[8], _m[9], _m[10], _m[11]),
+                                            new GlmNet.vec4(_m[12], _m[13], _m[14], _m[15]));
+
+            return m;
+        }
+
         float rotation = 0;
         public void Draw(Control view, OpenGL gl)
         {
-            this.initializeGL(view, gl);
+            this.initializeGL(gl, view);
             this.initializeLighting(gl);
+
+            gl.MatrixMode(OpenGL.GL_MODELVIEW);
+            gl.LoadIdentity();
 
             gl.InitNames();
             gl.PushName(0);
@@ -408,9 +454,7 @@ namespace _3DViewer.View
             // Clear The Screen And The Depth Buffer
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
 
-            gl.LoadIdentity();
             gl.Translate(0.0f, 0.0f, -10.0f);
-
             gl.Rotate(rotation, 0.0f, 1.0f, 0.0f);
 
             gl.Color(1.0f, 0.0f, 0.0f);
@@ -444,7 +488,7 @@ namespace _3DViewer.View
 
             this.drawModel(gl, .08f);
 
-            gl.Translate(-9.1f, -3.0f, 0.0f);
+            gl.Translate(-10f, -5f, -5f);
             this.drawAxes(gl);
             this.drawCube(gl, .2f);
 
@@ -467,7 +511,7 @@ namespace _3DViewer.View
             bool success = false;
             do
             {
-                this.initializeGL(view, gl);
+                this.initializeGL(gl, view);
                 gl.SelectBuffer(BUFFER_LENGTH, selectBuff);
                 gl.GetInteger(OpenGL.GL_VIEWPORT, viewport);
 
