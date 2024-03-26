@@ -67,7 +67,7 @@
     <Compile Include="ViewModel\GLViewModel.cs" />
     <Compile Include="ViewModel\ViewModelBase.cs" />
     <Compile Include="View\GLView.cs" />
-    <Compile Include="View\MouseControl.cs" />
+    <Compile Include="View\GLCamera.cs" />
     <Page Include="Images.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

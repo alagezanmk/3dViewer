@@ -6,7 +6,7 @@ using System.Windows.Input;
 
 namespace _3DViewer.View
 {
-    class MouseControl
+    class GLCamera
     {
         public double scale = 1.0f;
         public float translateX = 0, translateY = 0, translateZ = 0;

@@ -30,7 +30,7 @@ namespace _3DViewer
         private void ogl_OpenGLInitialized(object sender, OpenGLRoutedEventArgs args)
         {
             this.gl = args.OpenGL;
-            this.viewModel.glView.initializeGL(this, this.gl);
+            this.viewModel.glView.initializeGL(this.gl, this);
         }
 
         private void ogl_MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)

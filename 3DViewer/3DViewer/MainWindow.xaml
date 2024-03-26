@@ -58,7 +58,7 @@
                 </RibbonGroup>
                 <RibbonGroup Header="Projection" Height="87" Margin="0,0,0,-0.333" VerticalAlignment="Top" Width="86">
                     <RibbonButton x:Name="Projection" Content="" HorizontalAlignment="Left" Margin="0,0,-73,-63" 
-                                  VerticalAlignment="Top" Width="74" Height="67" Label="Perpspective" 
+                                  VerticalAlignment="Top" Width="74" Height="67" Label="Perspective" 
                                   Command="{Binding TogglePerspectiveCommand}" 
                                   LargeImageSource="imgs\perpective.png"/>
                 </RibbonGroup>
