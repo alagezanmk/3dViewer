@@ -85,6 +85,8 @@ namespace _3DViewer.File
                 }
             }            
         }
+
+        #region "Helper methods"
         private void readVertex(Vertex vertex, XmlReader reader)
         {
             for (int a = 0; a < reader.AttributeCount; a++)
@@ -107,5 +109,6 @@ namespace _3DViewer.File
                 }
             }
         }
+        #endregion "Helper methods"
     }
 }

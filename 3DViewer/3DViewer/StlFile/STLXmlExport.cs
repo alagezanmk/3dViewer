@@ -48,6 +48,7 @@ namespace _3DViewer.File
             return true;
         }
 
+        #region "Helper methods"
         void writeVertex(XmlWriter writer, string nodeName, Vertex vertex)
         {
             writer.WriteStartElement(nodeName);
@@ -56,5 +57,6 @@ namespace _3DViewer.File
             writer.WriteAttributeString("z", vertex.Z.ToString());
             writer.WriteEndElement();
         }
+        #endregion "Helper methods"
     }
 }

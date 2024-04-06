@@ -146,12 +146,14 @@ namespace _3DViewer.File
                 return true;
             }
 
+            #region "Helper methods"
             void writeVertex(BinaryWriter fileWriter, Vertex v)
             {
                 fileWriter.Write((Single)v.X);
                 fileWriter.Write((Single)v.Y);
                 fileWriter.Write((Single)v.Z);
             }
+            #endregion "Helper methods"
         }
     }
 }

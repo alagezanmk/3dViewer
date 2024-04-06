@@ -71,7 +71,6 @@ namespace _3DViewer.File
             {
                 return false;
             }
-
         }
 
         //------------------------------
@@ -124,49 +123,6 @@ namespace _3DViewer.File
                 return true;
             }
 
-            private bool checkTokens(ref string[] tokens, int minCount, string[] tokenValues, string errorToken = null)
-            {
-                if (null == errorToken)
-                    errorToken = tokenValues[0];
-
-                List<string> _tokens = new List<string>();
-                foreach(var token in tokens)
-                {
-                    var _token = token.Trim();
-                    if (!string.IsNullOrEmpty(_token))
-                        _tokens.Add(_token);
-                }
-
-                int t = 0;
-                tokens = new string[_tokens.Count];
-                foreach (var token in _tokens)
-                    tokens[t++] = token;
-
-                if (tokenValues.Length > tokens.Length)
-                {
-                    this.error = $"'{errorToken}' is not found";
-                    return false;
-                }
-
-                for (t = 0; t < tokenValues.Length; t++)
-                {
-                    if (tokenValues[t].Trim() != tokens[t].Trim())
-                    {
-                        this.error = $"'{errorToken.Trim()}' is not found";
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            private void paseVertex(ref Vertex vertex, string[] tokens, int index)
-            {
-                vertex.X = float.Parse(tokens[index++]);
-                vertex.Y = float.Parse(tokens[index++]);
-                vertex.Z = float.Parse(tokens[index]);
-            }
-
             private bool ParseFacet(StreamReader fileReader, string[] tokens)
             {
                 STLData.Facet facet = new STLData.Facet();
@@ -213,6 +169,52 @@ namespace _3DViewer.File
 
                 return success;
             }
+
+            #region "Helper methods"
+            private bool checkTokens(ref string[] tokens, int minCount, string[] tokenValues, string errorToken = null)
+            {
+                if (null == errorToken)
+                    errorToken = tokenValues[0];
+
+                List<string> _tokens = new List<string>();
+                foreach(var token in tokens)
+                {
+                    var _token = token.Trim();
+                    if (!string.IsNullOrEmpty(_token))
+                        _tokens.Add(_token);
+                }
+
+                int t = 0;
+                tokens = new string[_tokens.Count];
+                foreach (var token in _tokens)
+                    tokens[t++] = token;
+
+                if (tokenValues.Length > tokens.Length)
+                {
+                    this.error = $"'{errorToken}' is not found";
+                    return false;
+                }
+
+                for (t = 0; t < tokenValues.Length; t++)
+                {
+                    if (tokenValues[t].Trim() != tokens[t].Trim())
+                    {
+                        this.error = $"'{errorToken.Trim()}' is not found";
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            private void paseVertex(ref Vertex vertex, string[] tokens, int index)
+            {
+                vertex.X = float.Parse(tokens[index++]);
+                vertex.Y = float.Parse(tokens[index++]);
+                vertex.Z = float.Parse(tokens[index]);
+            }
+            
+            #endregion "Helper methods"
         }
 
         //------------------------------
@@ -220,13 +222,6 @@ namespace _3DViewer.File
         {
             public BinaryParser(Model.STLData model) : base(model)
             { }
-
-            private void paseVertex(ref Vertex vertex, BinaryReader binaryReader)
-            {
-                vertex.X = binaryReader.ReadSingle();
-                vertex.Y = binaryReader.ReadSingle();
-                vertex.Z = binaryReader.ReadSingle();
-            }
 
             override public bool Parse(FileStream fileStream)
             {
@@ -257,7 +252,6 @@ namespace _3DViewer.File
                     }
 
                     uint facetCount = binaryReader.ReadUInt32();
-
                     for (int f = 0; f < facetCount; f++)
                     {
                         STLData.Facet facet = new STLData.Facet();
@@ -287,6 +281,15 @@ namespace _3DViewer.File
 
                 return success;
             }
+
+            #region "Helper methods"
+            private void paseVertex(ref Vertex vertex, BinaryReader binaryReader)
+            {
+                vertex.X = binaryReader.ReadSingle();
+                vertex.Y = binaryReader.ReadSingle();
+                vertex.Z = binaryReader.ReadSingle();
+            }
+            #endregion "Helper methods"
         }
     }
 }
