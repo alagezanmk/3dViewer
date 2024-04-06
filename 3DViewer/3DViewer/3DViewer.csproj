@@ -57,17 +57,21 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Model\GLModel.cs" />
+    <Compile Include="Model\Scene.cs" />
+    <Compile Include="ViewModel\GLViewModel.cs" />
+    <Compile Include="ViewModel\ModelCommand.cs" />
+    <Compile Include="Model\PanZoomOribitElement.cs" />
+    <Compile Include="Model\CenterElement.cs" />
+    <Compile Include="Model\CompassElement.cs" />
+    <Compile Include="Model\STLData.cs" />
     <Compile Include="StlFile\STLFile.cs" />
     <Compile Include="StlFile\STLFileReader.cs" />
     <Compile Include="StlFile\STLFileWriter.cs" />
     <Compile Include="StlFile\STLXmlExport.cs" />
     <Compile Include="StlFile\STLXmlImport.cs" />
-    <Compile Include="ViewModel\ModelCommand.cs" />
-    <Compile Include="ViewModel\GLViewModel.cs" />
     <Compile Include="ViewModel\ViewModelBase.cs" />
     <Compile Include="View\GLView.cs" />
-    <Compile Include="View\GLCamera.cs" />
+    <Compile Include="Model\STLElement.cs" />
     <Page Include="Images.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -84,6 +88,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Themes\Generic.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -143,6 +151,14 @@
     <PackageReference Include="SharpGL.WPF">
       <Version>3.1.1</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="imgs\x.png" />
+    <Resource Include="imgs\y.png" />
+    <Resource Include="imgs\z.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="imgs\reset.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

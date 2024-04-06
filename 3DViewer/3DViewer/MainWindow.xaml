@@ -4,7 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:_3DViewer.ViewModel"
-        xmlns:WPF="clr-namespace:SharpGL.WPF;assembly=SharpGL.WPF" xmlns:SceneTree="clr-namespace:SharpGL.WPF.SceneTree;assembly=SharpGL.WPF" x:Class="_3DViewer.MainWindow"
+        xmlns:WPF="clr-namespace:SharpGL.WPF;assembly=SharpGL.WPF" 
+        x:Class="_3DViewer.MainWindow"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Window.Resources>
@@ -48,23 +49,56 @@
                     </RibbonButton>
                 </RibbonGroup>
                 <RibbonGroup Header="XML File" Height="87" Margin="0" VerticalAlignment="Top" Width="114">
-                    <RibbonButton x:Name="xmlFileExport" Content="" Margin="0,0,-4,-63" Height="68" Label="Export" 
+                    <RibbonButton Content="RibbonButton" HorizontalAlignment="Left" 
+                                  Label="Import" 
+                                  Command="{Binding XmlImportCommand}"
+                                  Margin="0,3,-50,-40" Width="50" Height="66" 
+                                  LargeImageSource="imgs\XMLImport.png"/>
+                    <RibbonButton x:Name="xmlFileExport" Content="" 
+                                  Margin="0,-27,-103,-37" Height="Auto" Label="Export" 
                                   LargeImageSource="imgs\XMLExport.png" 
                                   Command="{Binding XmlExportCommand}"
-                                  Width="46"/>
-                    <RibbonButton Content="RibbonButton" HorizontalAlignment="Left" Label="Import" 
-                                  Command="{Binding XmlImportCommand}"
-                                  Margin="52,-3,-102,-33" Width="50" Height="66" LargeImageSource="imgs\XMLImport.png"/>
+                                  Width="46" HorizontalAlignment="Right"/>
                 </RibbonGroup>
-                <RibbonGroup Header="Projection" Height="87" Margin="0,0,0,-0.333" VerticalAlignment="Top" Width="86">
-                    <RibbonButton x:Name="Projection" Content="" HorizontalAlignment="Left" Margin="0,0,-73,-63" 
-                                  VerticalAlignment="Top" Width="74" Height="67" Label="Perspective" 
-                                  Command="{Binding TogglePerspectiveCommand}" 
+                <RibbonGroup Header="Projection" Height="87" Margin="0,0,0,-0.333" VerticalAlignment="Top" Width="254">
+                    <RibbonButton x:Name="Projection" Content="" HorizontalAlignment="Left" Margin="0,2,-70,-65" 
+                                  VerticalAlignment="Top" Width="70" Height="67" Label="Perspective" 
+                                  Command="{Binding ToggleProjectionCommand}" 
                                   LargeImageSource="imgs\perpective.png"/>
+                    <RibbonButton Content="RibbonButton" HorizontalAlignment="Left" 
+                        Margin="76,3,-96,-5.333" VerticalAlignment="Top" 
+                        Width="40" Height="67" Label="" 
+                        Command="{Binding ResetProjectionCommand}" 
+                        LargeImageSource="imgs/reset.png" MinWidth="40"/>
+                    <Separator HorizontalAlignment="Left" Height="9" Margin="39,-33,-105,0" VerticalAlignment="Top" Width="66" RenderTransformOrigin="0.5,0.5">
+                        <Separator.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform/>
+                                <SkewTransform/>
+                                <RotateTransform Angle="90"/>
+                                <TranslateTransform/>
+                            </TransformGroup>
+                        </Separator.RenderTransform>
+                    </Separator>
+                    <RibbonButton Content="RibbonButton" HorizontalAlignment="Left" 
+                                  Margin="98,3,-118,-5.333" VerticalAlignment="Top" 
+                                  Width="40" Height="67" Label="" 
+                                  Command="{Binding XProjectionCommand}" 
+                                  LargeImageSource="imgs\x.png" MinWidth="40"/>
+                    <RibbonButton Content="RibbonButton" HorizontalAlignment="Left" 
+                                  Margin="120,3,-146.667,-5.333" VerticalAlignment="Top" 
+                                  Width="40" Height="67" 
+                                  Command="{Binding YProjectionCommand}" 
+                                  Label="" LargeImageSource="imgs\y.png" MinWidth="40"/>
+                    <RibbonButton Content="RibbonButton" HorizontalAlignment="Left" 
+                                  Margin="148,3,-178,-5.333" VerticalAlignment="Top" 
+                                  Width="40" Height="67" Label="" 
+                                  Command="{Binding ZProjectionCommand}" 
+                                  LargeImageSource="imgs\z.png" MinWidth="40"/>
                 </RibbonGroup>
 
-                <RibbonGroup Header="Application" Height="87" Margin="0,2,0,1.667" Width="467">
-                    <RibbonButton Content="RibbonButton" HorizontalAlignment="Left" Margin="0,0,-179.333,-66" 
+                <RibbonGroup Header="Application" Height="87" Margin="0,0,0,3.667" Width="71">
+                    <RibbonButton Content="RibbonButton" HorizontalAlignment="Left" Margin="5,0,-55,-66" 
                                   VerticalAlignment="Top" Width="50" Height="66" Label="Quit" 
                                   LargeImageSource="imgs\quit.png"
                                   Command="{Binding CloseAppCommand}"/>
@@ -73,13 +107,18 @@
 
             </RibbonTab>
         </Ribbon>
-        <WPF:OpenGLControl x:Name="ogl" Margin="0,115,0.682,-7.333" Grid.ColumnSpan="5" 
+        <WPF:OpenGLControl x:Name="ogl" Margin="0,118,0,0" Grid.ColumnSpan="5" 
+                           DrawFPS="True"
                            RenderContextType="FBO" 
                            OpenGLDraw="ogl_OpenGLDraw" 
                            OpenGLInitialized="ogl_OpenGLInitialized" 
-                                    MouseWheel="ogl_MouseWheel" 
-                                    MouseMove="ogl_MouseMove" 
-                                    MouseDown="ogl_MouseDown" 
-                                    MouseUp="ogl_MouseUp"/>
+                           Resized="ogl_Resized"                            
+                           VerticalAlignment="Stretch" 
+                           PreviewMouseLeftButtonDown="onMouse_Down_Up" 
+                           PreviewMouseRightButtonDown="onMouse_Down_Up" 
+                           PreviewMouseLeftButtonUp="onMouse_Down_Up" 
+                           PreviewMouseRightButtonUp="onMouse_Down_Up" 
+                           PreviewMouseMove="ogl_PreviewMouseMove" 
+                           PreviewMouseWheel="ogl_PreviewMouseWheel"/>
     </Grid>
 </Window>

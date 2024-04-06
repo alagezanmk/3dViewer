@@ -1,4 +1,5 @@
 ﻿using _3DViewer.Model;
+using SharpGL.SceneGraph;
 using System;
 using System.IO;
 
@@ -11,7 +12,7 @@ namespace _3DViewer.File
         {
             bool success = false;
 
-            if (null == this.model)
+            if (null == this.stlData)
             {
                 this.ProcessError = "No STLData to Export";
                 return false;
@@ -23,9 +24,9 @@ namespace _3DViewer.File
                 fileStream = new FileStream(fileName, FileMode.OpenOrCreate);
                 Writer writer = null;
                 if (this.binaryFormat)
-                    writer = new _BinaryWriter(this.model);
+                    writer = new _BinaryWriter(this.stlData);
                 else
-                    writer = new ASCIIWriter(this.model);
+                    writer = new ASCIIWriter(this.stlData);
 
                 success = writer.Write(fileStream);
                 this.ProcessError = writer.error;
@@ -46,9 +47,9 @@ namespace _3DViewer.File
         class Writer
         {
             public string error = "";
-            protected Model.GLModel model;
+            protected Model.STLData model;
 
-            public Writer(Model.GLModel model)
+            public Writer(Model.STLData model)
             {
                 this.model = model;
             }
@@ -62,7 +63,7 @@ namespace _3DViewer.File
         //---------------------------------------------
         class ASCIIWriter : Writer
         {
-            public ASCIIWriter(Model.GLModel model) : base(model)
+            public ASCIIWriter(Model.STLData model) : base(model)
             { }
 
             override public bool Write(FileStream fileStream)
@@ -73,16 +74,16 @@ namespace _3DViewer.File
 
                     string value = string.Format($"solid {this.model.name}");
                     fileWriter.WriteLine(value.Trim());
-                    foreach(Facet facet in this.model.facetList)
+                    foreach(STLData.Facet facet in this.model.facetList)
                     {
-                        Vector3 n = facet.normals[0];
-                        value = string.Format($"  facet normal {n.x} {n.y} {n.z}");
+                        Vertex n = facet.normals[0];
+                        value = string.Format($"  facet normal {n.X} {n.Y} {n.Z}");
                         fileWriter.WriteLine(value);
 
                         fileWriter.WriteLine("    outer loop");
-                        foreach (Vector3 v in facet.vertexes)
+                        foreach (Vertex v in facet.vertexes)
                         {
-                            value = string.Format($"      vertex {v.x} {v.y} {v.z}");
+                            value = string.Format($"      vertex {v.X} {v.Y} {v.Z}");
                             fileWriter.WriteLine(value);
                         }
 
@@ -107,7 +108,7 @@ namespace _3DViewer.File
         //------------------------------
         class _BinaryWriter : Writer
         {
-            public _BinaryWriter(Model.GLModel model) : base(model)
+            public _BinaryWriter(Model.STLData model) : base(model)
             { }
        
             override public bool Write(FileStream fileStream)
@@ -123,12 +124,12 @@ namespace _3DViewer.File
 
                     fileWriter.Write((UInt32)this.model.facetList.Count);
 
-                    foreach (Facet facet in this.model.facetList)
+                    foreach (STLData.Facet facet in this.model.facetList)
                     {
-                        this.writeVector(fileWriter, facet.normals[0]);
+                        this.writeVertex(fileWriter, facet.normals[0]);
 
-                        foreach (Vector3 v in facet.vertexes)
-                            this.writeVector(fileWriter, v);
+                        foreach (Vertex v in facet.vertexes)
+                            this.writeVertex(fileWriter, v);
 
                         fileWriter.Write((UInt16)0);
                     }
@@ -145,11 +146,11 @@ namespace _3DViewer.File
                 return true;
             }
 
-            void writeVector(BinaryWriter fileWriter, Vector3 v)
+            void writeVertex(BinaryWriter fileWriter, Vertex v)
             {
-                fileWriter.Write((Single)v.x);
-                fileWriter.Write((Single)v.y);
-                fileWriter.Write((Single)v.z);
+                fileWriter.Write((Single)v.X);
+                fileWriter.Write((Single)v.Y);
+                fileWriter.Write((Single)v.Z);
             }
         }
     }

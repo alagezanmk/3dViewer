@@ -3,6 +3,8 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
+using _3DViewer.Model;
+
 namespace _3DViewer.ViewModel
 {
     class GLViewModel
@@ -10,15 +12,15 @@ namespace _3DViewer.ViewModel
         public Window uiMainWindow = null;
         public View.GLView glView = new View.GLView();
 
-        Model.GLModel model = new Model.GLModel();
+        STLData stlData = new STLData();
 
         public GLViewModel()
         {}
 
-        void setModel(Model.GLModel model)
+        void setData(STLData data)
         {
-            this.model = model;
-            this.glView.updateModel(model);
+            this.stlData = data;
+            this.glView.SetModelData(data);
         }
 
         #region "FileOpenCommand"
@@ -49,7 +51,7 @@ namespace _3DViewer.ViewModel
                 return;
             }
 
-            this.setModel(reader.model);
+            this.setData(reader.stlData);
             MessageBox.Show("File has been Successfully read", "Completed", MessageBoxButton.OK, MessageBoxImage.Information);
 
         }
@@ -62,7 +64,8 @@ namespace _3DViewer.ViewModel
             get
             {
                 if (fileSaveCommand == null)
-                    fileSaveCommand = new Command.ModelCommand(param => this.FileSave(), null);
+                    fileSaveCommand = new Command.ModelCommand(param => this.FileSave(), 
+                                                               canExecute => false == this.stlData.IsEmpty());
 
                 return fileSaveCommand;
             }
@@ -70,6 +73,9 @@ namespace _3DViewer.ViewModel
 
         private void FileSave()
         {
+            if (this.stlData.IsEmpty())
+                return;
+
             SaveFileDialog dialog = new SaveFileDialog();
             dialog.Filter = "STL Files|*.stl;*.txt;";
 
@@ -77,7 +83,7 @@ namespace _3DViewer.ViewModel
                 return;
 
             File.STLFileWriter writer = new File.STLFileWriter();
-            writer.model = this.model;
+            writer.stlData = this.stlData;
             if (!writer.Write(dialog.FileName))
             {
                 MessageBox.Show(writer.ProcessError, "STL File Write Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -95,7 +101,8 @@ namespace _3DViewer.ViewModel
             get
             {
                 if (xmlExport == null)
-                    xmlExport = new Command.ModelCommand(param => this.XmlExport(), null);
+                    xmlExport = new Command.ModelCommand(param => this.XmlExport(), 
+                                                         canExecute => false == this.stlData.IsEmpty());
 
                 return xmlExport;
             }
@@ -103,6 +110,9 @@ namespace _3DViewer.ViewModel
 
         private void XmlExport()
         {
+            if (this.stlData.IsEmpty())
+                return;
+
             SaveFileDialog dialog = new SaveFileDialog();
             dialog.Filter = "STL Files|*.xml";
 
@@ -110,7 +120,7 @@ namespace _3DViewer.ViewModel
                 return;
 
             File.STLXmlExport xmlExport = new File.STLXmlExport();
-            xmlExport.model = this.model;
+            xmlExport.stlData = this.stlData;
 
             if (!xmlExport.Write(dialog.FileName))
             {
@@ -150,45 +160,97 @@ namespace _3DViewer.ViewModel
                 return;
             }
 
-            this.setModel(xmlImport.model);
+            this.setData(xmlImport.stlData);
             MessageBox.Show("XML File has been Successfully imported", "Completed", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         #endregion "XmlImpotCommand"
 
-        #region "TogglePerspectiveCommand"
-        private ICommand togglePerspective;
-        public ICommand TogglePerspectiveCommand
+        #region "ResetProjectionCommand"
+        private ICommand resetProjection;
+        public ICommand ResetProjectionCommand
         {
             get
             {
-                if (togglePerspective == null)
-                    togglePerspective = new Command.ModelCommand(param => this.TogglePerspective(), null);
+                if (resetProjection == null)
+                    resetProjection = new Command.ModelCommand(param => this.glView.ResetProjection(), 
+                                                               null);
 
-                return togglePerspective;
+                return resetProjection;
             }
         }
+        #endregion "ResetProjectionCommand"
 
-        private void TogglePerspective()
+        #region "XProjectionCommand"
+        private ICommand xProjection;
+        public ICommand XProjectionCommand
         {
-            this.glView.Perspective = !this.glView.Perspective;
-
-            if (null != this.uiMainWindow)
+            get
             {
-                MainWindow view = this.uiMainWindow as MainWindow;
-                var imageName = "OrthogonalImage";
-                var labelName = "Orthogonal";
-                if (this.glView.Perspective)
-                {
-                    imageName = "PerspectiveImage";
-                    labelName = "Perspective";
-                }
+                if (xProjection == null)
+                    xProjection = new Command.ModelCommand(param => this.glView.ResetProjection("x"),
+                                                           null);
 
-                view.Projection.LargeImageSource = (ImageSource)view.FindResource(imageName);
-                view.Projection.Label = labelName;
-                this.glView.Invalidate();
+                return xProjection;
             }
         }
-        #endregion "TogglePerspectiveCommand"
+        #endregion "XProjectionCommand"
+
+        #region "YProjectionCommand"
+        private ICommand yProjection;
+        public ICommand YProjectionCommand
+        {
+            get
+            {
+                if (yProjection == null)
+                    yProjection = new Command.ModelCommand(param => this.glView.ResetProjection("y"),
+                                                           null);
+
+                return yProjection;
+            }
+        }
+        #endregion "YProjectionCommand"
+
+        #region "ZProjectionCommand"
+        private ICommand zProjection;
+        public ICommand ZProjectionCommand
+        {
+            get
+            {
+                if (zProjection == null)
+                    zProjection = new Command.ModelCommand(param => this.glView.ResetProjection("z"),
+                                                           null);
+
+                return zProjection;
+            }
+        }
+        #endregion "ZProjectionCommand"
+
+        #region "ToggleProjectionCommand"
+        private ICommand toggleProjection;
+        public ICommand ToggleProjectionCommand
+        {
+            get
+            {
+                if (toggleProjection == null)
+                    toggleProjection = new Command.ModelCommand(param => this.ToggleProjection(), null);
+
+                return toggleProjection;
+            }
+        }
+
+        private void ToggleProjection()
+        {
+            if (null == this.uiMainWindow)
+                return;
+
+            var perspective = this.glView.ToggleProjection();
+            var name = perspective ? "Perspective" :"Orthogonal";
+
+            MainWindow view = this.uiMainWindow as MainWindow;
+            view.Projection.LargeImageSource = (ImageSource)view.FindResource(name + "Image");
+            view.Projection.Label = name;
+        }
+        #endregion "ToggleProjectionCommand"
 
         #region "CloseAppCommand"
         private ICommand closeApp;

@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using _3DViewer.Model;
 
-using _3DViewer;
 namespace _3DViewer.File
 {
     class STLFile
     {
-        public Model.GLModel model = new Model.GLModel();
+        public STLData stlData = new STLData();
 
         public string ProcessError { get; set; }        
 

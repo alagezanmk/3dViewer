@@ -1,4 +1,5 @@
 ﻿using _3DViewer.Model;
+using SharpGL.SceneGraph;
 using System;
 using System.Xml;
 
@@ -8,7 +9,7 @@ namespace _3DViewer.File
     {
         override public bool Write(string fileName)
         {
-            if(null == this.model)
+            if(null == this.stlData)
             {
                 this.ProcessError = "No STLData to Export";
                 return false;
@@ -20,16 +21,16 @@ namespace _3DViewer.File
                 {
                     writer.WriteStartDocument();
                     writer.WriteStartElement("Solid");
-                    writer.WriteAttributeString("name", this.model.name);
+                    writer.WriteAttributeString("name", this.stlData.name);
 
-                    foreach (Facet facet in this.model.facetList)
+                    foreach (STLData.Facet facet in this.stlData.facetList)
                     {
                         writer.WriteStartElement("Facet");
 
-                        this.writeVector(writer, "Normal", facet.normals[0]);
+                        this.writeVertex(writer, "Normal", facet.normals[0]);
 
-                        foreach (Vector3 v in facet.vertexes)
-                            this.writeVector(writer, "Vertex", v);
+                        foreach (Vertex v in facet.vertexes)
+                            this.writeVertex(writer, "Vertex", v);
 
                         writer.WriteEndElement();
                     }
@@ -47,12 +48,12 @@ namespace _3DViewer.File
             return true;
         }
 
-        void writeVector(XmlWriter writer, string nodeName, Vector3 vector)
+        void writeVertex(XmlWriter writer, string nodeName, Vertex vertex)
         {
             writer.WriteStartElement(nodeName);
-            writer.WriteAttributeString("x", vector.x.ToString());
-            writer.WriteAttributeString("y", vector.y.ToString());
-            writer.WriteAttributeString("z", vector.z.ToString());
+            writer.WriteAttributeString("x", vertex.X.ToString());
+            writer.WriteAttributeString("y", vertex.Y.ToString());
+            writer.WriteAttributeString("z", vertex.Z.ToString());
             writer.WriteEndElement();
         }
     }

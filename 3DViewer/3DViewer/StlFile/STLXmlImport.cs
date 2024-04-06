@@ -1,4 +1,5 @@
 ﻿using _3DViewer.Model;
+using SharpGL.SceneGraph;
 using System;
 using System.Xml;
 
@@ -10,8 +11,8 @@ namespace _3DViewer.File
         {
             try
             {
-                this.model.name = "";
-                this.model.facetList.Clear();
+                this.stlData.name = "";
+                this.stlData.facetList.Clear();
 
                 using (XmlReader reader = XmlReader.Create(fileName))
                 {
@@ -42,7 +43,7 @@ namespace _3DViewer.File
             {
                 reader.MoveToAttribute(a);
                 if ("name" == reader.Name)
-                    this.model.name = reader.Value;
+                    this.stlData.name = reader.Value;
             }
 
             while (reader.Read())
@@ -62,7 +63,7 @@ namespace _3DViewer.File
 
         private void readFacet(XmlReader reader)
         {
-            Facet facet = new Facet();
+            STLData.Facet facet = new STLData.Facet();
             int ivector = 0;
             while (reader.Read())
             {
@@ -71,20 +72,20 @@ namespace _3DViewer.File
                 case XmlNodeType.Element:
                     if ("Normal" == reader.Name)
                     {
-                        this.readVector(facet.normals[0], reader);
+                        this.readVertex(facet.normals[0], reader);
                         facet.normals[1] = facet.normals[2] = facet.normals[0];
                     }
                     else if ("Vertex" == reader.Name && ivector < 3)
-                        this.readVector(facet.vertexes[ivector++], reader);
+                        this.readVertex(facet.vertexes[ivector++], reader);
                     break;
 
                 case XmlNodeType.EndElement:
-                    this.model.facetList.Add(facet);
+                    this.stlData.facetList.Add(facet);
                     return;
                 }
             }            
         }
-        private void readVector(Vector3 vector, XmlReader reader)
+        private void readVertex(Vertex vertex, XmlReader reader)
         {
             for (int a = 0; a < reader.AttributeCount; a++)
             {
@@ -93,15 +94,15 @@ namespace _3DViewer.File
                 switch (reader.Name)
                 {
                 case "x":
-                    vector.x = v;
+                    vertex.X = v;
                     break;
 
                 case "y":
-                    vector.y = v;
+                    vertex.Y = v;
                     break;
 
                 case "z":
-                    vector.z = v;
+                    vertex.Z = v;
                     break;
                 }
             }

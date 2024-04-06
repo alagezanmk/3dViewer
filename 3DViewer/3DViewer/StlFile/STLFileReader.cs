@@ -1,7 +1,10 @@
-﻿using _3DViewer.Model;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+
+using SharpGL.SceneGraph;
+
+using _3DViewer.Model;
 
 namespace _3DViewer.File
 {
@@ -20,9 +23,9 @@ namespace _3DViewer.File
 
                     Parser parser = null;
                     if (this.IsAscii(fileStream))
-                        parser = new ASCIIParser(this.model);
+                        parser = new ASCIIParser(this.stlData);
                     else
-                        parser = new BinaryParser(this.model);
+                        parser = new BinaryParser(this.stlData);
 
                     fileStream.Seek(0, 0);
                     success = parser.Parse(fileStream);
@@ -57,11 +60,11 @@ namespace _3DViewer.File
         class Parser
         {
             public string error = "";
-            protected Model.GLModel model;
+            protected Model.STLData stlData;
 
-            public Parser(Model.GLModel model)
+            public Parser(Model.STLData stlData)
             {
-                this.model = model;
+                this.stlData = stlData;
             }
 
             virtual public bool Parse(FileStream fileStream)
@@ -74,7 +77,7 @@ namespace _3DViewer.File
         //------------------------------
         class ASCIIParser : Parser
         {
-            public ASCIIParser(Model.GLModel model) : base(model)
+            public ASCIIParser(Model.STLData model) : base(model)
             { }
 
             override public bool Parse(FileStream fileStream)
@@ -97,7 +100,7 @@ namespace _3DViewer.File
                         switch (tokens[0].Trim())
                         {
                         case "solid":
-                            this.model.name = tokens[1].Trim();
+                            this.stlData.name = tokens[1].Trim();
                             this.error = "File-End 'endsolid' is not found";
                             continue;
 
@@ -157,16 +160,16 @@ namespace _3DViewer.File
                 return true;
             }
 
-            private void paseVector3(Vector3 vector, string[] tokens, int index)
+            private void paseVertex(ref Vertex vertex, string[] tokens, int index)
             {
-                vector.x = float.Parse(tokens[index++]);
-                vector.y = float.Parse(tokens[index++]);
-                vector.z = float.Parse(tokens[index]);
+                vertex.X = float.Parse(tokens[index++]);
+                vertex.Y = float.Parse(tokens[index++]);
+                vertex.Z = float.Parse(tokens[index]);
             }
 
             private bool ParseFacet(StreamReader fileReader, string[] tokens)
             {
-                Facet facet = new Facet();
+                STLData.Facet facet = new STLData.Facet();
 
                 bool success = false;
                 do
@@ -174,7 +177,7 @@ namespace _3DViewer.File
                     if (!this.checkTokens(ref tokens, 5, new string[] { "facet", "normal" }))
                         break;
 
-                    this.paseVector3(facet.normals[0], tokens, 2);
+                    this.paseVertex(ref facet.normals[0], tokens, 2);
                     facet.normals[1] = facet.normals[2] = facet.normals[0];
 
                     string line = fileReader.ReadLine();
@@ -190,7 +193,7 @@ namespace _3DViewer.File
                         if (!this.checkTokens(ref tokens, 4, new string[] { "vertex" }, $"vertext[{v}]"))
                             break;
 
-                        this.paseVector3(facet.vertexes[v], tokens, 1);
+                        this.paseVertex(ref facet.vertexes[v], tokens, 1);
                     }
 
                     line = fileReader.ReadLine();
@@ -206,7 +209,7 @@ namespace _3DViewer.File
                     success = true;
                 } while (false);
 
-                this.model.facetList.Add(facet);
+                this.stlData.facetList.Add(facet);
 
                 return success;
             }
@@ -215,14 +218,14 @@ namespace _3DViewer.File
         //------------------------------
         class BinaryParser : Parser
         {
-            public BinaryParser(Model.GLModel model) : base(model)
+            public BinaryParser(Model.STLData model) : base(model)
             { }
 
-            private void paseVector3(Vector3 vector, BinaryReader binaryReader)
+            private void paseVertex(ref Vertex vertex, BinaryReader binaryReader)
             {
-                vector.x = binaryReader.ReadSingle();
-                vector.y = binaryReader.ReadSingle();
-                vector.z = binaryReader.ReadSingle();
+                vertex.X = binaryReader.ReadSingle();
+                vertex.Y = binaryReader.ReadSingle();
+                vertex.Z = binaryReader.ReadSingle();
             }
 
             override public bool Parse(FileStream fileStream)
@@ -241,14 +244,14 @@ namespace _3DViewer.File
 
                     byte[] attributes;
                     byte[] header = binaryReader.ReadBytes(80);
-                    this.model.name = System.Text.Encoding.UTF8.GetString(header, 0, header.Length);
+                    this.stlData.name = System.Text.Encoding.UTF8.GetString(header, 0, header.Length);
 
                     // transcate at \0
-                    for(int i = 0; i < this.model.name.Length; i++)
+                    for(int i = 0; i < this.stlData.name.Length; i++)
                     {
-                        if ('\0' == this.model.name[i])
+                        if ('\0' == this.stlData.name[i])
                         {
-                            this.model.name = this.model.name.Substring(0, i);
+                            this.stlData.name = this.stlData.name.Substring(0, i);
                             break;
                         }
                     }
@@ -257,13 +260,13 @@ namespace _3DViewer.File
 
                     for (int f = 0; f < facetCount; f++)
                     {
-                        Facet facet = new Facet();
+                        STLData.Facet facet = new STLData.Facet();
 
-                        this.paseVector3(facet.normals[0], binaryReader);
+                        this.paseVertex(ref facet.normals[0], binaryReader);
                         facet.normals[1] = facet.normals[2] = facet.normals[0];
 
                         for (int v = 0; v < 3; v++)
-                            this.paseVector3(facet.vertexes[v], binaryReader);
+                            this.paseVertex(ref facet.vertexes[v], binaryReader);
 
                         UInt16 attrCount = binaryReader.ReadUInt16(); // attribute size count
                         if (attrCount > 0) // skip attribute bytes
@@ -272,7 +275,7 @@ namespace _3DViewer.File
                             string name = System.Text.Encoding.UTF8.GetString(attributes, 0, attributes.Length);
                         }
 
-                        model.facetList.Add(facet);
+                        stlData.facetList.Add(facet);
                     }
 
                     return true;
