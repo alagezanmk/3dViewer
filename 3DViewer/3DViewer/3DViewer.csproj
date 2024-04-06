@@ -59,7 +59,7 @@
     </ApplicationDefinition>
     <Compile Include="Model\Scene.cs" />
     <Compile Include="ViewModel\GLViewModel.cs" />
-    <Compile Include="ViewModel\ModelCommand.cs" />
+    <Compile Include="ViewModel\base\ModelCommand.cs" />
     <Compile Include="Model\PanZoomOribitElement.cs" />
     <Compile Include="Model\CenterElement.cs" />
     <Compile Include="Model\CompassElement.cs" />
@@ -69,7 +69,7 @@
     <Compile Include="StlFile\STLFileWriter.cs" />
     <Compile Include="StlFile\STLXmlExport.cs" />
     <Compile Include="StlFile\STLXmlImport.cs" />
-    <Compile Include="ViewModel\ViewModelBase.cs" />
+    <Compile Include="ViewModel\base\ViewModelBase.cs" />
     <Compile Include="View\GLView.cs" />
     <Compile Include="Model\STLElement.cs" />
     <Page Include="Images.xaml">
