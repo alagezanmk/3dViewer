@@ -11,6 +11,7 @@ namespace _3DViewer.Model
     class PanZoomOribitElement 
         : SceneElement
         , IRenderable
+        , ISelectableElement
     {
         double scale = 1.0f;
         Vertex translate = new Vertex();
@@ -75,18 +76,29 @@ namespace _3DViewer.Model
         public void TranslateScaleTransform(OpenGL gl)
         {
             gl.Translate(this.translate.X, this.translate.Y, translate.Z);
-
-            const float ScaleFactor = 1.0f;
-            gl.Scale(this.scale * ScaleFactor,
-                      this.scale * ScaleFactor,
-                      this.scale * ScaleFactor);
+            gl.Scale(this.scale, this.scale, this.scale);
         }
 
-        public void Transform(OpenGL gl)
+        #region "ISelectable"
+        public virtual void Transform(OpenGL gl)
         {
             this.TranslateScaleTransform(gl);
             this.RotateTransform(gl);
         }
+
+        public virtual void PopTransform(OpenGL gl)
+        {}
+
+        public virtual bool HitTest(OpenGL gl, Vertex pos)
+        {
+            return false;
+        }
+        bool ISelectableElement.Selected
+        {
+            get;
+            set;
+        }
+        #endregion "ISelectable"
 
         public virtual void Render(OpenGL gl, RenderMode renderMode)
         {

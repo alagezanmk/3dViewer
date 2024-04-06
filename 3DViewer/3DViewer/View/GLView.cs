@@ -5,6 +5,8 @@ using SharpGL;
 using SharpGL.SceneGraph.Primitives;
 
 using _3DViewer.Model;
+using SharpGL.SceneGraph;
+using System.Windows.Input;
 
 namespace _3DViewer.View
 {
@@ -14,18 +16,15 @@ namespace _3DViewer.View
         STLElement stlModel = new STLElement();
 
         PanZoomOribitElement panZoomOribit = new PanZoomOribitElement();
-
         CompassElement compass = new CompassElement();        
-        CenterElement mousePos = new CenterElement(2, .05f);
 
         public GLView()
         {
             // Compass
             this.scene.SceneContainer.AddChild(this.compass);
-
-            // Pan, Zoom, Oribitor
             this.compass.origin = this.panZoomOribit;
 
+            // Pan, Zoom, Oribitor
             this.scene.SceneContainer.AddChild(this.panZoomOribit);
             this.ResetRotate();            
 
@@ -36,13 +35,16 @@ namespace _3DViewer.View
             this.scene.SceneContainer.AddChild(folder);
 
             // World Center
-            CenterElement worldCenter = new CenterElement(2, 1f);
+            CenterElement worldCenter = new CenterElement(2, .5f);
             worldCenter.color = Color.Red;
-            worldCenter.position.Z += .5f;
+            worldCenter.position.Z += 1.5f;
             this.scene.SceneContainer.AddChild(worldCenter);
 
+            #region "Hit Element - Testing"
             // Mouse Click Postion
             this.scene.SceneContainer.AddChild(this.mousePos);
+            this.scene.SceneContainer.AddChild(this.rayCastLine);
+            #endregion "Hit Element - Testing"
 
             // STL Model
             this.scene.SceneContainer.AddChild(this.stlModel);
@@ -77,7 +79,10 @@ namespace _3DViewer.View
 
         public void ResetProjection(string direction = "")
         {
-            this.panZoomOribit.Reset();
+            bool controlPressed = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl);
+            if(controlPressed)
+                this.panZoomOribit.Reset();
+
             switch (direction)
             {
             default:
@@ -113,11 +118,31 @@ namespace _3DViewer.View
 
         public void OnMouseUp(System.Windows.Point pos, bool leftButton, bool rightButton)
         {
+            if (null != this.selectedElement)
+            {
+                IDraggableElement draggableElement = this.selectedElement as IDraggableElement;
+                if (null != draggableElement)
+                {
+                    draggableElement.EndDrag(this.scene.CurrentOpenGLContext, pos);
+                    return;
+                }
+            }
+
             this.panZoomOribit.OnMouseUp(pos, leftButton, rightButton);
         }
 
         public void OnMouseMove(System.Windows.Point pos, double cx, double cy)
         {
+            if(null != this.selectedElement)
+            {
+                IDraggableElement draggableElement = this.selectedElement as IDraggableElement;
+                if (null != draggableElement)
+                {
+                    draggableElement.Drag(this.scene.CurrentOpenGLContext, pos, cx, cy);
+                    return;
+                }
+            }
+
             this.panZoomOribit.OnMouseMove(pos, cx, cy);
         }
 
@@ -128,74 +153,64 @@ namespace _3DViewer.View
 
         public bool _OnMouseDown(OpenGL gl, Control view, System.Windows.Point pos, bool leftButton, bool rightButton)
         {
-            if (leftButton)
-            {
-                gl.LoadIdentity();
-                this.panZoomOribit.Transform(gl);
-
-                double[] s = gl.UnProject(pos.X, view.ActualHeight - pos.Y, .1);
-                this.mousePos.position.X = (float)s[0];
-                this.mousePos.position.Y = (float)s[1];
-                this.mousePos.position.Z = (float)s[2];
-
-                //if (this.hitTest(view, gl, pos.X, pos.Y))
-                //   return;
-            }
-
-            var hitItems = this.scene.DoHitTest((int)pos.X, (int)pos.Y);
-            foreach (var item in hitItems)
-            {
+            this.testHit(gl, view, pos, leftButton);
+            if (leftButton && this.hitTest(gl, view, pos.X, pos.Y))
                 return true;
-            }
 
             return false;
         }
 
-        bool hitTest(Control view, OpenGL gl, double x, double y)
+        ISelectableElement selectedElement;
+        bool hitTest(OpenGL gl, Control view, double clientX, double clientY)
         {
-            //return false;
-            const int BUFFER_LENGTH = 64;
-            uint[] selectBuff = new uint[BUFFER_LENGTH];
-
-            int hits;
-            int[] viewport = new int[4];
-
-            bool success = false;
-            do
+            var selections = this.scene.HitTest(gl, view, clientX, clientY);
+            if (selections.Count > 0)
             {
-                gl.SelectBuffer(BUFFER_LENGTH, selectBuff);
-                gl.GetInteger(OpenGL.GL_VIEWPORT, viewport);
+                this.selectedElement = selections[0];
+                IDraggableElement draggableElement = this.selectedElement as IDraggableElement;
+                if (null != draggableElement)
+                    draggableElement.StartDrag(this.scene.CurrentOpenGLContext, new System.Windows.Point(clientX, clientY));
 
-                gl.RenderMode(OpenGL.GL_SELECT);
-                gl.MatrixMode(OpenGL.GL_PROJECTION);
-                gl.PushMatrix();
+                return true;
+            }
+
+            this.selectedElement = null;
+            return false;
+
+        }
+
+        #region "Hit Element - Testing"
+        CenterElement mousePos = new CenterElement(2, .05f);
+        RayCastLineElement rayCastLine = new RayCastLineElement();
+        void testHit(OpenGL gl, Control view, System.Windows.Point pos, bool leftButton)
+        {
+            if (leftButton)
+            {
+                gl.MatrixMode(OpenGL.GL_MODELVIEW);
                 gl.LoadIdentity();
 
-                // Change render mode
-                gl.InitNames();
-                gl.PushName(0);
+                this.panZoomOribit.Transform(gl);
 
-                gl.PickMatrix(x, viewport[3] - y, .2, .2, viewport);
-                this.scene.InitializeProjection();
+                double[] world;
+                double clientY = view.ActualHeight - pos.Y;
+                unProject(ref this.mousePos.position, .1);
+                unProject(ref this.rayCastLine.position1, 0);
 
-                gl.MatrixMode(OpenGL.GL_MODELVIEW);
-                this.OnDraw(gl, view);
+                byte[] pixels = new byte[sizeof(float)];
+                gl.ReadPixels((int)pos.X, (int)clientY, 1, 1, OpenGL.GL_DEPTH_COMPONENT, OpenGL.GL_FLOAT, pixels);
+                float Z = System.BitConverter.ToSingle(pixels, 0);
 
-                hits = gl.RenderMode(OpenGL.GL_RENDER);
-                this.scene.InitializeProjection();
-                if (hits > 0)
+                unProject(ref this.rayCastLine.position2, Z);
+
+                void unProject(ref Vertex v, double z)
                 {
-                    uint count = selectBuff[0];
-                    if (count > 0)
-                    {
-                        uint id = selectBuff[3];
-                        success = true;
-                    }
+                    world = gl.UnProject(pos.X, clientY, z);
+                    v.X = (float)world[0];
+                    v.Y = (float)world[1];
+                    v.Z = (float)world[2];
                 }
-
-            } while (false);
-
-            return success;
+            }
         }
+        #endregion "Hit Element - Testing"
     }
 }

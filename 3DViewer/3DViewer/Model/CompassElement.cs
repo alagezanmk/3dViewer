@@ -9,6 +9,8 @@ namespace _3DViewer.Model
     class CompassElement
         : SceneElement
         , IRenderable
+        , ISelectableElement
+        , IDraggableElement
     {
         public PanZoomOribitElement origin;
         public double viewWidth = 100;
@@ -16,18 +18,10 @@ namespace _3DViewer.Model
 
         Vertex position = new Vertex();
 
-        const int compassId = 1;
-        public virtual void Render(OpenGL gl, RenderMode renderMode)
+        #region "ISelectable"
+        public virtual void Transform(OpenGL gl)
         {
-            gl.LoadName(compassId);
-
-            //  Push all matrix, attributes, disable lighting and depth testing.
             gl.PushMatrix();
-            gl.PushAttrib(OpenGL.GL_CURRENT_BIT | OpenGL.GL_ENABLE_BIT
-                          | OpenGL.GL_LINE_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
-            gl.Disable(OpenGL.GL_LIGHTING);
-            gl.Disable(OpenGL.GL_TEXTURE_2D);
-            gl.DepthFunc(OpenGL.GL_ALWAYS);
 
             // Start with identify Transform
             gl.LoadIdentity();
@@ -58,25 +52,92 @@ namespace _3DViewer.Model
 
             // Match with origin Transform
             this.origin?.RotateTransform(gl); // Rotate at fixed compass position along origin
+        }
+
+        public virtual void PopTransform(OpenGL gl)
+        {
+            gl.PopMatrix();
+        }
+
+        const float off = .1f;
+        const float len = .5f;
+        const float vertLen = .8f;
+
+        public virtual bool HitTest(OpenGL gl, Vertex pos)
+        {
+            bool hit = pos.X >= -CompassElement.off && pos.X <= -CompassElement.off + CompassElement.len
+                    && pos.Y >= -CompassElement.off && pos.Y <= -CompassElement.off + CompassElement.len
+                    && pos.Z >= 0 && pos.Z <= CompassElement.vertLen;
+
+            return hit;
+        }
+
+        bool selected = false;
+        bool ISelectableElement.Selected
+        {
+            get => selected;
+            set => selected = value;
+        }
+        #endregion "ISelectable"
+
+        #region "IDraggable"
+        System.Windows.Point startDragPos;
+        bool dragMode = false;
+        public virtual void StartDrag(OpenGL gl, System.Windows.Point pos)
+        {
+            this.startDragPos = pos;
+            this.dragMode = true;
+
+            Vertex world = Scene.UnProject(gl, pos.X, pos.Y);
+        }
+
+        public virtual void Drag(OpenGL gl, System.Windows.Point pos, double cx, double cy)
+        {
+            Vertex world = Scene.UnProject(gl, pos.X, pos.Y);
+        }
+
+        public virtual void EndDrag(OpenGL gl, System.Windows.Point pos)
+        {
+            this.dragMode = false;
+        }
+        #endregion "IDraggable"
+
+        public virtual void Render(OpenGL gl, RenderMode renderMode)
+        {
+            //  Push all matrix, attributes, disable lighting and depth testing.
+            gl.PushMatrix();
+            gl.PushAttrib(OpenGL.GL_CURRENT_BIT | OpenGL.GL_ENABLE_BIT
+                          | OpenGL.GL_LINE_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
+
+            gl.Disable(OpenGL.GL_LIGHTING);
+            gl.Disable(OpenGL.GL_TEXTURE_2D);
+            gl.DepthFunc(OpenGL.GL_ALWAYS);
+
+            this.Transform(gl);
 
             // Drawing ////////////////////////////////////////////
             // Draw Base arc 
-            float o = .1f;
-            float l = .5f;
             void drawBase()
             {
-                this.drawArcXY(gl, -o, -o, 0, l, 0, 1.5708);
-                gl.Vertex(-o, -o, 0);
+                this.drawArcXY(gl, -CompassElement.off, -CompassElement.off, 0, CompassElement.len, 0, 1.5708);
+                gl.Vertex(-CompassElement.off, -CompassElement.off, 0);
             }
 
+
+            GLColor lineColor = System.Drawing.Color.White;
+            GLColor fillColor = new GLColor(0f, 128 / 255f, 128 / 255f, 1);
+            if (this.selected)
+                fillColor = System.Drawing.Color.Yellow;
+
+            gl.Color(fillColor);
+
             gl.LineWidth(1.0f);
-            gl.Color(0f, 128 / 255f, 128 / 255f);
             gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
             gl.Begin(OpenGL.GL_POLYGON);
             drawBase();
             gl.End();
 
-            gl.Color(1f, 1f, 1f);
+            gl.Color(lineColor);
             gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_LINE);
             gl.Begin(OpenGL.GL_POLYGON);
             drawBase();
@@ -84,7 +145,7 @@ namespace _3DViewer.Model
             // End - Draw Base arc --------------------
 
             // Draw L Wing; ---------------------------
-            o = .23f; l = .38f;
+            float o = .23f, l = .38f;
             void drawLWing()
             {
                 this.drawArcXZ(gl, 0, 0, o, l, 0, 1.5708);
@@ -93,13 +154,13 @@ namespace _3DViewer.Model
                 gl.Vertex(0, 0, o);               
             }
 
-            gl.Color(0f, 128 / 255f, 128 / 255f);
+            gl.Color(fillColor);
             gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
             gl.Begin(OpenGL.GL_POLYGON);
             drawLWing();
             gl.End();
 
-            gl.Color(1f, 1f, 1f);
+            gl.Color(lineColor);
             gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_LINE);
             gl.Begin(OpenGL.GL_POLYGON);
             drawLWing();
@@ -107,11 +168,10 @@ namespace _3DViewer.Model
             // End - Draw L Wing; ---------------------------
 
             // Vertical line
-            const float vertLen = .8f;
-            gl.Color(1f, 1f, 1f);
+            gl.Color(lineColor);
             gl.Begin(OpenGL.GL_LINES);
             gl.Vertex(0f, 0f, 0f);
-            gl.Vertex(0, 0f, vertLen);
+            gl.Vertex(0, 0f, CompassElement.vertLen);
             gl.End();
 
             // Draw Points
@@ -119,7 +179,7 @@ namespace _3DViewer.Model
             gl.Begin(OpenGL.GL_POINTS);
 
             // Vertical Top WHITE point
-            gl.Vertex(0f, 0f, vertLen);
+            gl.Vertex(0f, 0f, CompassElement.vertLen);
 
             // Vertical Bottom RED point
             gl.Color(1f, 0f, 0f);
@@ -129,7 +189,7 @@ namespace _3DViewer.Model
             gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
 
             gl.PopAttrib();
-            gl.PopMatrix();
+            this.PopTransform(gl);
         }
 
         void drawArcXZ(OpenGL gl, double cx, double cy, double cz,

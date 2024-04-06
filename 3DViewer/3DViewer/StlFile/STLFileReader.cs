@@ -235,14 +235,13 @@ namespace _3DViewer.File
                 bool success = true;
                 try
                 {
-                    BinaryReader binaryReader = new BinaryReader(fileStream);
+                    BinaryReader binaryReader = new BinaryReader(fileStream);                    
 
-                    byte[] attributes;
-                    byte[] header = binaryReader.ReadBytes(80);
+                    byte[] attributes, header = binaryReader.ReadBytes(80);
                     this.stlData.name = System.Text.Encoding.UTF8.GetString(header, 0, header.Length);
 
-                    // transcate at \0
-                    for(int i = 0; i < this.stlData.name.Length; i++)
+                    #region "transcate at \0"
+                    for (int i = 0; i < this.stlData.name.Length; i++)
                     {
                         if ('\0' == this.stlData.name[i])
                         {
@@ -250,6 +249,7 @@ namespace _3DViewer.File
                             break;
                         }
                     }
+                    #endregion "transcate at \0"
 
                     uint facetCount = binaryReader.ReadUInt32();
                     for (int f = 0; f < facetCount; f++)

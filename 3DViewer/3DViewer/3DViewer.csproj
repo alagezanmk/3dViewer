@@ -57,7 +57,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Model\DraggableElement.cs" />
+    <Compile Include="Model\RayCastLine.cs" />
     <Compile Include="Model\Scene.cs" />
+    <Compile Include="Model\SelectableElement.cs" />
     <Compile Include="ViewModel\GLViewModel.cs" />
     <Compile Include="ViewModel\base\ModelCommand.cs" />
     <Compile Include="Model\PanZoomOribitElement.cs" />
@@ -159,6 +162,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="imgs\reset.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="imgs\3d.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
