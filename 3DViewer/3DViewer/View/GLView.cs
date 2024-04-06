@@ -1,10 +1,9 @@
 ﻿using _3DViewer.Model;
-using SharpGL;
 using System;
 using System.Drawing;
-using System.Windows;
 using System.Windows.Controls;
 
+// Without Scene Graph
 namespace _3DViewer.View
 {
     class GLView

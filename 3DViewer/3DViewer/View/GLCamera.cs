@@ -1,5 +1,4 @@
 ﻿using _3DViewer.Model;
-using SharpGL;
 using System;
 using System.Windows;
 using System.Windows.Input;
