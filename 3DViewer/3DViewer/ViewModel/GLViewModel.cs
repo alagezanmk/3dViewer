@@ -252,6 +252,61 @@ namespace _3DViewer.ViewModel
         }
         #endregion "ToggleProjectionCommand"
 
+        #region "SelectionModeCommand"
+        private ICommand selectionModeCommand;
+        public ICommand SelectionModeCommand
+        {
+            get
+            {
+                if (selectionModeCommand == null)
+                    selectionModeCommand = new Command.ModelCommand(param => this.SelectionMode(), null);
+
+                return selectionModeCommand;
+            }
+        }
+
+        private void SelectionMode()
+        {
+            if (null == this.uiMainWindow)
+                return;
+
+            var triangle = this.glView.ToggleSelectionMode();
+            var name = triangle ? "Triangle" : "Object";
+
+            MainWindow view = this.uiMainWindow as MainWindow;
+            view.SelectionMode.LargeImageSource = (ImageSource)view.FindResource(name + "Image");
+            view.SelectionMode.Label = name;
+        }
+        #endregion "SelectionModeCommand"
+
+        #region "MouseModeCommand"
+        private ICommand mouseModeCommand;
+        public ICommand MouseModeCommand
+        {
+            get
+            {
+                if (mouseModeCommand == null)
+                    mouseModeCommand = new Command.ModelCommand(param => this.MouseMode(), null);
+
+                return mouseModeCommand;
+            }
+        }
+
+        private void MouseMode()
+        {
+            if (null == this.uiMainWindow)
+                return;
+
+            var panMouseMode = this.glView.TogglePanMouseMode();
+            var name = panMouseMode ? "Pan" : "Orbit";
+
+            MainWindow view = this.uiMainWindow as MainWindow;
+            view.MouseMode.LargeImageSource = (ImageSource)view.FindResource(name + "Image");
+            view.MouseMode.Label = name;
+        }
+        #endregion "MouseModeCommand"
+
+
         #region "CloseAppCommand"
         private ICommand closeApp;
         public ICommand CloseAppCommand

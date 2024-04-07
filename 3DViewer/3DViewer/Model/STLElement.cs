@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Drawing;
 
 using SharpGL;
 using SharpGL.SceneGraph;
@@ -12,7 +11,8 @@ namespace _3DViewer.Model
         , IRenderable
         , ISelectableElement
     {
-        bool dataReady = false;
+        public bool DataReady = false;
+        public bool TriangleSelectionMode = true;
 
         Vertex minPos = new Vertex();
         Vertex maxPos = new Vertex();
@@ -28,14 +28,21 @@ namespace _3DViewer.Model
             this.normals = data.GetNormalPoints();
             this.vertexes = data.GetVertexValues();
 
-            this.dataReady = true;
+            this.selected = false;
+            this.triangleSelected = false;
+            this.DataReady = true;
         }
 
-        const int StlId = 2;
-        double scale = 1;
+        #region "ISelectable"
 
-        void scaleToFit()
+        public virtual void Transform(OpenGL gl, bool rotateOnly = false)
         {
+            if (rotateOnly)
+                return;
+
+            gl.PushMatrix();
+
+            // Scale to minimal size
             double m = Math.Abs(this.maxPos.X - this.minPos.X);
             double v = Math.Abs(this.maxPos.Y - this.minPos.Y);
             m = Math.Max(m, v);
@@ -46,26 +53,13 @@ namespace _3DViewer.Model
             double ms = Math.Min(m, 3);
             double _scale = ms / m;
 
-            this.scale = Math.Min(1, _scale);
-        }
-
-        #region "ISelectable"
-
-        public virtual void Transform(OpenGL gl)
-        {
-            gl.PushMatrix();
-
-            // Scale rto minimal size
-            this.scaleToFit();
-            gl.Scale(this.scale, this.scale, this.scale);
+            double scale = Math.Min(1, _scale);
+            gl.Scale(scale, scale, scale);
 
             // Move Shape(X,Y-Center, min-Z) to origin
             double cx = (this.maxPos.X + this.minPos.X) / 2f;
             double cy = (this.maxPos.Y + this.minPos.Y) / 2f;
             gl.Translate(-cx, -cy, -this.minPos.Z);
-
-            double[] modelview = new double[16];
-            gl.GetDouble(OpenGL.GL_MODELVIEW_MATRIX, modelview);
         }
 
         public virtual void PopTransform(OpenGL gl)
@@ -73,77 +67,119 @@ namespace _3DViewer.Model
             gl.PopMatrix();
         }
 
-        public virtual bool HitTest(OpenGL gl, Vertex pos)
+        bool bbHitTest(Ray ray, Vertex min, Vertex max)
         {
-            if (!this.dataReady)
+            bool hit = ray.point.X >= min.X && ray.point.X <= max.X
+                    && ray.point.Y >= min.Y && ray.point.Y <= max.Y
+                    && ray.point.Z >= min.Z && ray.point.Z <= max.Z;
+            return hit;
+        }
+
+        public virtual bool HitTest(OpenGL gl, Ray ray)
+        {
+            if (!this.DataReady)
                 return false;
 
             bool hit = false;
-            hit = this.lineHitTest(gl, pos);
-            if (false == hit)
+            if (this.TriangleSelectionMode)
             {
-                hit = pos.X >= this.minPos.X && pos.X <= this.maxPos.X
-                   && pos.Y >= this.minPos.Y && pos.Y <= this.maxPos.Y
-                   && pos.Z >= this.minPos.Z && pos.Z <= this.maxPos.Z;
+                Vertex normalPoint = new Vertex();
+                Vertex intersectionPoint = new Vertex();
+                hit = this.TriangleHitTest(gl, ray, ref intersectionPoint, ref normalPoint);
             }
+            else
+                this.triangleSelected = false;
+
+            if (false == hit)
+                hit = this.bbHitTest(ray, this.minPos, this.maxPos);
 
             return hit;
         }
 
-        #region "Line Hit Test
-        bool lineSelected = false;
-        Vertex linePos1 = new Vertex();
-        Vertex linePos2 = new Vertex();
-        public bool lineHitTest(OpenGL gl, Vertex pos)
+        #region "Triangle Hit Test
+        bool triangleSelected = false;
+        Vertex[] trianglesHitVertexes = new Vertex[3];
+
+        public bool TriangleHitTest(OpenGL gl, Ray ray, 
+                                    ref Vertex intersectionPoint,
+                                    ref Vertex normal)
         {
-            if (!this.dataReady)
+            if (!this.DataReady)
                 return false;
 
             bool hit = false;
-            const float m = .2f;
-            int vCount = this.vertexes.Length;
-            for (int i = 0; i < vCount; i += 3)
+            int faceCount = this.vertexes.Length / (3 * 3);
+            for (int f = 0; f < faceCount; f++)
             {
-                hit = pos.X >= this.vertexes[i + 0] - m && pos.X <= this.vertexes[i + 0] + m
-                   && pos.Y >= this.vertexes[i + 1] - m && pos.Y <= this.vertexes[i + 1] + m
-                   && pos.X >= this.vertexes[i + 2] - m && pos.Y <= this.vertexes[i + 2] + m;
+                int p = f * 3 * 3;
+                _getVertex(ref this.trianglesHitVertexes[0], this.vertexes, ref p);
+                _getVertex(ref this.trianglesHitVertexes[1], this.vertexes, ref p);
+                _getVertex(ref this.trianglesHitVertexes[2], this.vertexes, ref p);
+
+                hit = rayTriangleIntersect(ray.origin, ray.direction,
+                                           this.trianglesHitVertexes[0],
+                                           this.trianglesHitVertexes[1],
+                                           this.trianglesHitVertexes[2],
+                                           ref intersectionPoint);
 
                 if (hit)
                 {
-                    int v = i;
-                    linePos1.X = this.vertexes[v++];
-                    linePos1.Y = this.vertexes[v++];
-                    linePos1.Y = this.vertexes[v++];
-
-                    linePos2 = linePos1;
+                    Vertex[] vs = this.trianglesHitVertexes;
+                    Vertex va = vs[0] - vs[1];
+                    Vertex vb = vs[1] - vs[2];
+                    normal = va.VectorProduct(vb);
+                    normal.Normalize();
                     break;
                 }
             }
+    
+            this.triangleSelected = hit;
+            return this.triangleSelected;
 
-            //for (int i = 0; i < vCount; i += 3)
-            //{
-            //    hit = pos.X >= this.vertexes[i + 0] - m && pos.X <= this.vertexes[i + 3 + 0] + m
-            //       && pos.Y >= this.vertexes[i + 1] - m && pos.Y <= this.vertexes[i + 3 + 1] + m
-            //       && pos.X >= this.vertexes[i + 2] - m && pos.Y <= this.vertexes[i + 3 + 2] + m;
+            #region "Helper methods"
+            void _getVertex(ref Vertex vertex, float[] vertexes, ref int p)
+            {
+                vertex.X = vertexes[p++];
+                vertex.Y = vertexes[p++];
+                vertex.Z = vertexes[p++];
+            }
 
-            //    if (hit)
-            //    {
-            //        int v = i;
-            //        linePos1.X = this.vertexes[v++];
-            //        linePos1.Y = this.vertexes[v++];
-            //        linePos1.Y = this.vertexes[v++];
+            bool rayTriangleIntersect(Vertex origin, Vertex direction,
+                                      Vertex v0, Vertex v1, Vertex v2,
+                                      ref Vertex _intersectionPoint)
+            {
+                const float kEpsilon = 1e-8f;
 
-            //        linePos2.X = this.vertexes[v++];
-            //        linePos2.Y = this.vertexes[v++];
-            //        linePos2.Y = this.vertexes[v++];
-            //        break;
-            //    }
-            //}
+                Vertex v0v1 = v1 - v0;
+                Vertex v0v2 = v2 - v0;
+                Vertex pvec = direction.VectorProduct(v0v2);
+                float det = v0v1.ScalarProduct(pvec);
+            
+                // if the determinant is negative, the triangle is 'back facing'
+                // if the determinant is close to 0, the ray misses the triangle
+                if (det < kEpsilon)
+                    return false;
 
-            this.lineSelected = hit;
-            return this.lineSelected;
+                float invDet = 1 / det;
+                Vertex tvec = origin - v0;
+                float u = tvec.ScalarProduct(pvec) * invDet;
+                if (u < 0 || u > 1)
+                    return false;
+
+                Vertex qvec = tvec.VectorProduct(v0v1);
+                float v = direction.ScalarProduct(qvec) * invDet;
+                if (v < 0 || u + v > 1)
+                    return false;
+
+                float t = v0v2.ScalarProduct(qvec) * invDet;
+                _intersectionPoint = origin + direction * t;
+                return true;
+            }
+
+            #endregion "Helper methods"
         }
-        #endregion "Line Hit Test
+
+        #endregion "Triangle Hit Test
 
         bool selected = false;
         bool ISelectableElement.Selected
@@ -155,7 +191,7 @@ namespace _3DViewer.Model
 
         public virtual void Render(OpenGL gl, RenderMode renderMode)
         {
-            if (!this.dataReady)
+            if (!this.DataReady)
                 return;
 
             //  Push all attributes, disable lighting and depth testing.
@@ -171,9 +207,12 @@ namespace _3DViewer.Model
             gl.EnableClientState(OpenGL.GL_VERTEX_ARRAY);
             gl.EnableClientState(OpenGL.GL_NORMAL_ARRAY);
 
-            Color color = Color.White;
-            if (this.selected && false == this.lineSelected)
-                color = Color.Yellow;
+            System.Drawing.Color color = System.Drawing.Color.LightGray;
+            if (this.selected && false == this.triangleSelected)
+                color = System.Drawing.Color.Yellow;
+
+            if (this.triangleSelected)
+                color = System.Drawing.Color.DimGray;
 
             gl.Color(color.R / 255f, color.G / 255f, color.B / 255f);
 
@@ -184,15 +223,16 @@ namespace _3DViewer.Model
             gl.DisableClientState(OpenGL.GL_NORMAL_ARRAY);
             gl.DisableClientState(OpenGL.GL_VERTEX_ARRAY);
 
-            if (this.lineSelected)
+            if (this.triangleSelected)
             {
-                color = Color.Yellow;
+                color = System.Drawing.Color.Yellow;
                 gl.Color(color.R, color.G, color.B);
 
+                Vertex[] v = this.trianglesHitVertexes;
                 gl.LineWidth(20);
-                gl.Begin(OpenGL.GL_LINES);
-                gl.Vertex(this.linePos1.X, this.linePos1.Y, this.linePos1.Z);
-                gl.Vertex(this.linePos2.X, this.linePos2.Y, this.linePos2.Z);
+                gl.Begin(OpenGL.GL_TRIANGLES);
+                for(int i = 0; i < 3; i++)
+                    gl.Vertex(v[i].X, v[i].Y, v[i].Z);
                 gl.End();
             }
 

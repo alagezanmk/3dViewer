@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
+using System.Windows;
 using System.Windows.Controls;
 
 using SharpGL;
 using SharpGL.SceneGraph;
 using SharpGL.SceneGraph.Cameras;
+using SharpGL.SceneGraph.Core;
 
 namespace _3DViewer.Model
 {
     class Scene : SharpGL.SceneGraph.Scene
     {
-        public bool Perspective { get; set; } = true;
+        public bool Perspective { get; set; } = true;        
         public double AspectRatio { get; set; } = 1;
 
         CameraInfo perspective = new CameraInfo();
@@ -83,7 +84,7 @@ namespace _3DViewer.Model
 
         void InitializeLighting(OpenGL gl)
         {
-            Color color = Color.White;
+            System.Drawing.Color color = System.Drawing.Color.White;
             float[] lightColor1 = new float[]
             {
                 color.R / 255f,
@@ -92,7 +93,7 @@ namespace _3DViewer.Model
                 .1f
             };
 
-            color = Color.White;
+            color = System.Drawing.Color.White;
             float[] lightColor2 = new float[]
             {
                 color.R / 255f,
@@ -101,7 +102,7 @@ namespace _3DViewer.Model
                 .1f
             };
 
-            color = Color.LightGray;
+            color = System.Drawing.Color.LightGray;
             float[] specref = new float[]
             {
                 color.R / 255f,
@@ -137,41 +138,76 @@ namespace _3DViewer.Model
             gl.Enable(OpenGL.GL_NORMALIZE);
         }
 
+        public static Vertex UnProject(OpenGL gl, double clientX, double clientY, float Z)
+        {
+            double[] vertexes = gl.UnProject((double)clientX, clientY, Z);
+            Vertex modelPoint = new Vertex((float)vertexes[0], (float)vertexes[1], (float)vertexes[2]);
+            return modelPoint;
+        }
+
         public static Vertex UnProject(OpenGL gl, double clientX, double clientY)
         {
             byte[] pixels = new byte[sizeof(float)];
             gl.ReadPixels((int)clientX, (int)clientY, 1, 1, OpenGL.GL_DEPTH_COMPONENT, OpenGL.GL_FLOAT, pixels);
             float Z = System.BitConverter.ToSingle(pixels, 0);
 
-            double[] world = gl.UnProject((double)clientX, clientY, Z);
-            Vertex pos = new Vertex((float)world[0], (float)world[1], (float)world[2]);
-            return pos;
+            double[] vertexes = gl.UnProject((double)clientX, clientY, Z);
+            Vertex modelPoint = new Vertex((float)vertexes[0], (float)vertexes[1], (float)vertexes[2]);
+            return modelPoint;
+        }
+
+        void  hitTest(OpenGL gl, SceneElement parent,Ray ray, 
+                      List<ISelectableElement> selections)
+        {
+            ISelectableElement se = parent as ISelectableElement;
+            if (null != se)
+            {
+                se.Transform(gl);
+                Scene.MapRayPointsToModel(ray, gl);
+
+                se.Selected = se.HitTest(gl, ray);
+                if (se.Selected)
+                    selections.Add(se);
+            }
+
+            foreach (SceneElement e in parent.Children)
+                this.hitTest(gl, e, ray, selections);
+
+            if (null != se)
+                se.PopTransform(gl);
         }
 
         public List<ISelectableElement> HitTest(OpenGL gl, Control view, double clientX, double clientY)
         {
-            double normClientY = view.ActualHeight - clientY;
-
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
             gl.LoadIdentity();
 
-            Vertex world;
+            Ray ray = Scene.CreateRay(view, clientX, clientY);
             List<ISelectableElement> selections = new List<ISelectableElement>();
-            foreach (ISelectableElement se in this.SceneContainer.Traverse(se => se is ISelectableElement))
-            {
-                se.Transform(gl);
-                world = UnProject(gl, clientX, normClientY);
-                se.Selected = se.HitTest(gl, world);
-                if (se.Selected)
-                    selections.Add(se);
-
-                se.PopTransform(gl);
-            }
-            
+            this.hitTest(gl, this.SceneContainer, ray, selections);
             return selections;
+        }
+        
+        public static Ray CreateRay(Control view, double clientX, double clientY)
+        {
+            Ray ray = new Ray();
+            ray.client = ray.normClient = new Vertex((float)clientX, (float)clientY, 0f);
+            ray.normClient.Y = (float)(view.ActualHeight - clientY);
+
+            ray.clientWidth = (float)view.ActualWidth;
+            ray.clientHeight = (float)view.ActualHeight;
+            return ray;
+        }
+
+        public static void MapRayPointsToModel(Ray ray, OpenGL gl)
+        {
+            ray.point = UnProject(gl, ray.normClient.X, ray.normClient.Y);
+            ray.origin = UnProject(gl, ray.normClient.X, ray.normClient.Y, 0);
+            ray.direction = ray.point - ray.origin;
         }
     }
 
+    #region "Camera Classes"
     ///////////////////////////////////////////////////////////////////////////
     public class CameraInfo
     {
@@ -212,5 +248,5 @@ namespace _3DViewer.Model
         public double Top { get; set; }
         public double Bottom { get; set; }
     }
-
+    #endregion "Camera Classes"
 }

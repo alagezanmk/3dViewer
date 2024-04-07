@@ -1,8 +1,12 @@
-﻿using _3DViewer.ViewModel;
+﻿using System.Windows;
+using System.Windows.Input;
+
 using SharpGL;
 using SharpGL.WPF;
-using System.Windows;
-using System.Windows.Input;
+
+using _3DViewer.ViewModel;
+using System;
+using System.Reflection;
 
 namespace _3DViewer
 {
@@ -19,7 +23,6 @@ namespace _3DViewer
 
             this.viewModel = this.DataContext as GLViewModel;
             this.viewModel.uiMainWindow = this;
-
         }
 
         OpenGL gl;
@@ -44,16 +47,28 @@ namespace _3DViewer
         void onMouse_Down_Up(object sender, MouseButtonEventArgs e)
         {
             Point pos = e.GetPosition(this.ogl);
-            this.viewModel.glView.OnMouseDown(this.gl, this.ogl, pos,
-                MouseButtonState.Pressed == e.LeftButton,
-                MouseButtonState.Pressed == e.RightButton);
+            if(e.ChangedButton == MouseButton.Left)
+            {
+                if (MouseButtonState.Pressed == e.LeftButton)
+                {
+                    this.viewModel.glView.OnMouseDown(this.gl, this.ogl, pos,
+                            true, MouseButtonState.Pressed == e.RightButton);
+                    this.ogl.CaptureMouse();
+                }
+                else
+                {
+                    this.ogl.ReleaseMouseCapture();
+                    this.viewModel.glView.OnMouseUp(this.ogl, pos, false, MouseButtonState.Pressed == e.RightButton);
+                }
+            }
+           
             e.Handled = true;
         }
 
         private void ogl_PreviewMouseMove(object sender, MouseEventArgs e)
         {
             Point pos = e.GetPosition(this.ogl);
-            this.viewModel.glView.OnMouseMove(pos, this.ogl.ActualWidth, this.ogl.ActualHeight);
+            this.viewModel.glView.OnMouseMove(this.ogl, pos, this.ogl.ActualWidth, this.ogl.ActualHeight);
             e.Handled = true;
         }
 

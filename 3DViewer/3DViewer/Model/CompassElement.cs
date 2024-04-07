@@ -1,5 +1,7 @@
 ﻿using System;
-
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Controls;
 using SharpGL;
 using SharpGL.SceneGraph;
 using SharpGL.SceneGraph.Core;
@@ -12,35 +14,65 @@ namespace _3DViewer.Model
         , ISelectableElement
         , IDraggableElement
     {
-        public PanZoomOribitElement origin;
-        public double viewWidth = 100;
-        public double viewHeight = 100;
+        public PanZoomOribitElement originElement;
 
-        Vertex position = new Vertex();
+        public class SnapInfo
+        {
+            public bool Enabled = false;
+            public Vertex Vertex;
+            public Vertex Normal;
+            public List<ISelectableElement> ParentElements = new List<ISelectableElement>();
+        }
+
+        public SnapInfo Snap = new SnapInfo();
 
         #region "ISelectable"
-        public virtual void Transform(OpenGL gl)
+        const int margin = 80;
+        public Point TopRightMargin = new Point( margin, margin );
+        public virtual void Transform(OpenGL gl, bool rotateOnly = false)
         {
             gl.PushMatrix();
 
             // Start with identify Transform
             gl.LoadIdentity();
 
+            Vertex clientSnapPoint = new Vertex();
+            if (this.Snap.Enabled)
+            {
+                // Transform parent to Snapped Element
+                foreach (var se in this.Snap.ParentElements)
+                    se.Transform(gl);
+
+                // Map Element Snap point to Client point
+                clientSnapPoint = gl.Project(this.Snap.Vertex);
+                gl.LoadIdentity();
+            }
+
             gl.Translate(0, 0, -10f); // Move origin to some depth
 
-            // Compass Position Top, Right of View
-            var viewport = new int[4];
-            gl.GetInteger(OpenGL.GL_VIEWPORT, viewport);
+            if (false ==  this.Snap.Enabled)
+            {
+                // Compass Position Top, Right of View
+                var viewport = new int[4];
+                gl.GetInteger(OpenGL.GL_VIEWPORT, viewport);
 
-            const int offset = 80;
-            int viewWidth = viewport[2];
-            int viewHeight = viewport[3];
-            double[] w = gl.UnProject(viewWidth - offset, viewHeight - offset, .9);
+                int viewWidth = viewport[2];
+                int viewHeight = viewport[3];
 
-            this.position.X = (float)w[0];
-            this.position.Y = (float)w[1];
-            this.position.Z = (float)w[2];
-            gl.Translate(this.position.X, this.position.Y, this.position.Z);
+                double clientX = viewWidth - this.TopRightMargin.X;
+                double clientY = viewHeight - this.TopRightMargin.Y;
+                double[] w = gl.UnProject(clientX, clientY, .9);
+
+                Vertex position = new Vertex((float)w[0], (float)w[1], (float)w[2]);
+                gl.Translate(position.X, position.Y, position.Z);
+            }
+            else
+            {
+                // Map Client point with current compass Transform
+                double[] w = gl.UnProject(clientSnapPoint.X, clientSnapPoint.Y, .9);
+                Vertex position = new Vertex((float)w[0], (float)w[1], (float)w[2]);
+                gl.Translate(position.X, position.Y, position.Z);
+            }
 
             // Render size correction for Orthogonal Project
             double scale = 1;
@@ -50,8 +82,19 @@ namespace _3DViewer.Model
 
             gl.Scale(scale, scale, scale);
 
-            // Match with origin Transform
-            this.origin?.RotateTransform(gl); // Rotate at fixed compass position along origin
+            if (this.Snap.Enabled)
+            {
+                foreach(var se in this.Snap.ParentElements)
+                    se.Transform(gl, true);
+
+                Vertex n = this.Snap.Normal;
+                gl.Rotate(180 * (1 - n.X), 180 * (n.Y - 1), 180 * (1 - n.Z));
+            }
+            else
+            {
+                // Match with origin Transform
+                this.originElement?.RotateTransform(gl); // Rotate at fixed compass position along origin
+            }
         }
 
         public virtual void PopTransform(OpenGL gl)
@@ -63,11 +106,11 @@ namespace _3DViewer.Model
         const float len = .5f;
         const float vertLen = .8f;
 
-        public virtual bool HitTest(OpenGL gl, Vertex pos)
+        public virtual bool HitTest(OpenGL gl, Ray ray)
         {
-            bool hit = pos.X >= -CompassElement.off && pos.X <= -CompassElement.off + CompassElement.len
-                    && pos.Y >= -CompassElement.off && pos.Y <= -CompassElement.off + CompassElement.len
-                    && pos.Z >= 0 && pos.Z <= CompassElement.vertLen;
+            bool hit = ray.point.X >= -CompassElement.off && ray.point.X <= -CompassElement.off + CompassElement.len
+                    && ray.point.Y >= -CompassElement.off && ray.point.Y <= -CompassElement.off + CompassElement.len
+                    && ray.point.Z >= 0 && ray.point.Z <= CompassElement.vertLen;
 
             return hit;
         }
@@ -81,24 +124,37 @@ namespace _3DViewer.Model
         #endregion "ISelectable"
 
         #region "IDraggable"
-        System.Windows.Point startDragPos;
+        public IDragElementListener DragListener;
+
+        Point startMousePos;
+        Point startTopRightMargin = new Point();
         bool dragMode = false;
-        public virtual void StartDrag(OpenGL gl, System.Windows.Point pos)
+
+        public virtual void StartDrag(OpenGL gl, Control view, Point pos)
         {
-            this.startDragPos = pos;
+            this.startMousePos = pos;
+            this.startTopRightMargin = this.TopRightMargin;
             this.dragMode = true;
 
-            Vertex world = Scene.UnProject(gl, pos.X, pos.Y);
+            this.DragListener?.OnDragElement(view, pos, this, DragState.Started);
         }
 
-        public virtual void Drag(OpenGL gl, System.Windows.Point pos, double cx, double cy)
+        public virtual bool Drag(OpenGL gl, Control view, System.Windows.Point pos, double cx, double cy)
         {
-            Vertex world = Scene.UnProject(gl, pos.X, pos.Y);
+            if (false == this.dragMode)
+                return false;
+
+            this.TopRightMargin.X = this.startTopRightMargin.X + this.startMousePos.X- pos.X;
+            this.TopRightMargin.Y = this.startTopRightMargin.Y + pos.Y - this.startMousePos.Y;
+
+            this.DragListener?.OnDragElement(view, pos, this, DragState.Dragging);
+            return true;
         }
 
-        public virtual void EndDrag(OpenGL gl, System.Windows.Point pos)
+        public virtual void EndDrag(OpenGL gl, Control view, System.Windows.Point pos)
         {
             this.dragMode = false;
+            this.DragListener?.OnDragElement(view, pos, this, DragState.Finished);
         }
         #endregion "IDraggable"
 
@@ -117,25 +173,30 @@ namespace _3DViewer.Model
 
             // Drawing ////////////////////////////////////////////
             // Draw Base arc 
+            GLColor lineColor = System.Drawing.Color.White;
             void drawBase()
             {
                 this.drawArcXY(gl, -CompassElement.off, -CompassElement.off, 0, CompassElement.len, 0, 1.5708);
                 gl.Vertex(-CompassElement.off, -CompassElement.off, 0);
             }
 
-
-            GLColor lineColor = System.Drawing.Color.White;
             GLColor fillColor = new GLColor(0f, 128 / 255f, 128 / 255f, 1);
-            if (this.selected)
-                fillColor = System.Drawing.Color.Yellow;
+            if (false == this.dragMode)
+            {
+                if (this.selected)
+                    fillColor = System.Drawing.Color.BlueViolet;
 
-            gl.Color(fillColor);
+                if(this.Snap.Enabled)
+                    fillColor = System.Drawing.Color.Aquamarine;
 
-            gl.LineWidth(1.0f);
-            gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
-            gl.Begin(OpenGL.GL_POLYGON);
-            drawBase();
-            gl.End();
+                gl.Color(fillColor);
+
+                gl.LineWidth(1.0f);
+                gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
+                gl.Begin(OpenGL.GL_POLYGON);
+                drawBase();
+                gl.End();
+            }
 
             gl.Color(lineColor);
             gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_LINE);
@@ -144,28 +205,31 @@ namespace _3DViewer.Model
             gl.End();
             // End - Draw Base arc --------------------
 
-            // Draw L Wing; ---------------------------
-            float o = .23f, l = .38f;
-            void drawLWing()
-            {
-                this.drawArcXZ(gl, 0, 0, o, l, 0, 1.5708);
-                gl.Vertex(0, 0, o);
-                this.drawArcYZ(gl, 0, 0, o, l, 0, 1.5708);
-                gl.Vertex(0, 0, o);               
+            if (false == this.dragMode)
+            { 
+                // Draw L Wing; ---------------------------
+                float o = .23f, l = .38f;
+                void drawLWing()
+                {
+                    this.drawArcXZ(gl, 0, 0, o, l, 0, 1.5708);
+                    gl.Vertex(0, 0, o);
+                    this.drawArcYZ(gl, 0, 0, o, l, 0, 1.5708);
+                    gl.Vertex(0, 0, o);
+                }
+
+                gl.Color(fillColor);
+                gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
+                gl.Begin(OpenGL.GL_POLYGON);
+                drawLWing();
+                gl.End();
+
+                gl.Color(lineColor);
+                gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_LINE);
+                gl.Begin(OpenGL.GL_POLYGON);
+                drawLWing();
+                gl.End();
+                // End - Draw L Wing; ---------------------------
             }
-
-            gl.Color(fillColor);
-            gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
-            gl.Begin(OpenGL.GL_POLYGON);
-            drawLWing();
-            gl.End();
-
-            gl.Color(lineColor);
-            gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_LINE);
-            gl.Begin(OpenGL.GL_POLYGON);
-            drawLWing();
-            gl.End();
-            // End - Draw L Wing; ---------------------------
 
             // Vertical line
             gl.Color(lineColor);
@@ -192,6 +256,7 @@ namespace _3DViewer.Model
             this.PopTransform(gl);
         }
 
+        #region "Helper methods"
         void drawArcXZ(OpenGL gl, double cx, double cy, double cz,
                              float r, double start_angle, double arc_angle)
         {
@@ -238,5 +303,6 @@ namespace _3DViewer.Model
                 gl.Vertex(cx, cy + x, cz + y);
             }
         }
+        #endregion "Helper methods"
     }
 }

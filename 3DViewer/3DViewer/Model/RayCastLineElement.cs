@@ -1,10 +1,8 @@
-﻿using _3DViewer.View;
+﻿using System.Drawing;
 
 using SharpGL;
 using SharpGL.SceneGraph;
 using SharpGL.SceneGraph.Core;
-using System.Drawing;
-using System.Windows.Controls;
 
 namespace _3DViewer.Model
 {

@@ -1,6 +1,7 @@
-﻿using SharpGL.SceneGraph;
-using System;
+﻿using System;
 using System.Collections.Generic;
+
+using SharpGL.SceneGraph;
 
 namespace _3DViewer.Model
 {

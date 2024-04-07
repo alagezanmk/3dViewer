@@ -1,58 +1,61 @@
 ﻿using System.Drawing;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 using SharpGL;
 using SharpGL.SceneGraph.Primitives;
+using SharpGL.SceneGraph;
 
 using _3DViewer.Model;
-using SharpGL.SceneGraph;
-using System.Windows.Input;
+using SharpGL.SceneGraph.Core;
 
 namespace _3DViewer.View
 {
-    class GLView
+    class GLView : IDragElementListener
     {
         public _3DViewer.Model.Scene scene = new _3DViewer.Model.Scene();
-        STLElement stlModel = new STLElement();
+        STLElement stlModelElement = new STLElement();
 
-        PanZoomOribitElement panZoomOribit = new PanZoomOribitElement();
-        CompassElement compass = new CompassElement();        
+        PanZoomOribitElement panZoomOribitElement = new PanZoomOribitElement();
+        CompassElement compassElement = new CompassElement();        
 
         public GLView()
         {
-            // Compass
-            this.scene.SceneContainer.AddChild(this.compass);
-            this.compass.origin = this.panZoomOribit;
-
             // Pan, Zoom, Oribitor
-            this.scene.SceneContainer.AddChild(this.panZoomOribit);
-            this.ResetRotate();            
+            this.scene.SceneContainer.AddChild(this.panZoomOribitElement);
+            this.ResetRotate();
 
-            //  Add test primitives.
+            //  Add Grid primitives.
             var folder = new Folder() { Name = "Design Primitives" };
             folder.AddChild(new SharpGL.SceneGraph.Primitives.Grid());
             folder.AddChild(new Axies());
-            this.scene.SceneContainer.AddChild(folder);
+            this.panZoomOribitElement.AddChild(folder);
 
-            // World Center
+            #region "Hit Element - Testing"
+            // ***For testing mouse click point and ray Cast origin and direction
+            // World Center 
             CenterElement worldCenter = new CenterElement(2, .5f);
             worldCenter.color = Color.Red;
             worldCenter.position.Z += 1.5f;
-            this.scene.SceneContainer.AddChild(worldCenter);
+            //this.panZoomOribitElement.AddChild(worldCenter);
 
-            #region "Hit Element - Testing"
-            // Mouse Click Postion
-            this.scene.SceneContainer.AddChild(this.mousePos);
-            this.scene.SceneContainer.AddChild(this.rayCastLine);
+            // Mouse Click Postion - 
+            //this.panZoomOribitElement.AddChild(this.mousePos);     
+            //this.panZoomOribitElement.AddChild(this.rayCastLine);  
             #endregion "Hit Element - Testing"
 
             // STL Model
-            this.scene.SceneContainer.AddChild(this.stlModel);
-        }   
-     
+            this.panZoomOribitElement.AddChild(this.stlModelElement);
+
+            // Compass
+            this.scene.SceneContainer.AddChild(this.compassElement);
+            this.compassElement.originElement = this.panZoomOribitElement;
+            this.compassElement.DragListener = this;
+        }
+
         public void SetModelData(Model.STLData data)
         {
-            this.stlModel.SetData(data);
+            this.stlModelElement.SetData(data);
         }
 
         public void InitializeGL(OpenGL gl, Control view)
@@ -76,12 +79,23 @@ namespace _3DViewer.View
             this.scene.InitializeProjection();
             return this.scene.Perspective;
         }
+        public bool ToggleSelectionMode()
+        {
+            this.stlModelElement.TriangleSelectionMode = !this.stlModelElement.TriangleSelectionMode;
+            return this.stlModelElement.TriangleSelectionMode;
+        }
+
+        public bool TogglePanMouseMode()
+        {
+            this.panZoomOribitElement.PanMouseMode = !this.panZoomOribitElement.PanMouseMode;
+            return this.panZoomOribitElement.PanMouseMode;
+        }
 
         public void ResetProjection(string direction = "")
         {
             bool controlPressed = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl);
             if(controlPressed)
-                this.panZoomOribit.Reset();
+                this.panZoomOribitElement.Reset();
 
             switch (direction)
             {
@@ -90,22 +104,22 @@ namespace _3DViewer.View
                 break;
 
             case "x":
-                this.panZoomOribit.SetRotate(90, 0, 0);
+                this.panZoomOribitElement.SetRotate(90, 0, 0);
                 break;
 
             case "y":
-                this.panZoomOribit.SetRotate(0, 90, 0);
+                this.panZoomOribitElement.SetRotate(0, 90, 0);
                 break;
 
             case "z":
-                this.panZoomOribit.SetRotate(0, 0, 90);
+                this.panZoomOribitElement.SetRotate(0, 0, 90);
                 break;
             }
         }
 
         public void ResetRotate()
         {
-            this.panZoomOribit.SetRotate(60, 0, 45);
+            this.panZoomOribitElement.SetRotate(60, 0, 45);
         }
 
         public void OnMouseDown(OpenGL gl, Control view, System.Windows.Point pos,  bool leftButton, bool rightButton)
@@ -113,42 +127,42 @@ namespace _3DViewer.View
             if (this._OnMouseDown(gl, view, pos, leftButton, rightButton))
                 return;
 
-            this.panZoomOribit.OnMouseDown(pos, leftButton, rightButton);
+            this.panZoomOribitElement.OnMouseDown(pos, leftButton, rightButton);
         }      
 
-        public void OnMouseUp(System.Windows.Point pos, bool leftButton, bool rightButton)
+        public void OnMouseUp(Control view, System.Windows.Point pos, bool leftButton, bool rightButton)
         {
             if (null != this.selectedElement)
             {
                 IDraggableElement draggableElement = this.selectedElement as IDraggableElement;
                 if (null != draggableElement)
                 {
-                    draggableElement.EndDrag(this.scene.CurrentOpenGLContext, pos);
+                    draggableElement.EndDrag(this.scene.CurrentOpenGLContext, view, pos);
                     return;
                 }
             }
 
-            this.panZoomOribit.OnMouseUp(pos, leftButton, rightButton);
+            this.panZoomOribitElement.OnMouseUp(pos, leftButton, rightButton);
         }
 
-        public void OnMouseMove(System.Windows.Point pos, double cx, double cy)
+        public void OnMouseMove(Control view, System.Windows.Point pos, double cx, double cy)
         {
             if(null != this.selectedElement)
             {
                 IDraggableElement draggableElement = this.selectedElement as IDraggableElement;
                 if (null != draggableElement)
                 {
-                    draggableElement.Drag(this.scene.CurrentOpenGLContext, pos, cx, cy);
-                    return;
+                    if(draggableElement.Drag(this.scene.CurrentOpenGLContext, view, pos, cx, cy))
+                        return;
                 }
             }
 
-            this.panZoomOribit.OnMouseMove(pos, cx, cy);
+            this.panZoomOribitElement.OnMouseMove(pos, cx, cy);
         }
 
         public void OnMouseWheel(int delta)
         {
-            this.panZoomOribit.OnMouseWheel(delta);
+            this.panZoomOribitElement.OnMouseWheel(delta);
         }
 
         public bool _OnMouseDown(OpenGL gl, Control view, System.Windows.Point pos, bool leftButton, bool rightButton)
@@ -166,10 +180,18 @@ namespace _3DViewer.View
             var selections = this.scene.HitTest(gl, view, clientX, clientY);
             if (selections.Count > 0)
             {
-                this.selectedElement = selections[0];
+                // Unselect back elements
+                for (int i = 0; i < selections.Count - 1; i++)
+                    selections[i].Selected = false;
+
+                // Select last element
+                this.selectedElement = selections[selections.Count - 1];
+
+                // Start Draggable element
                 IDraggableElement draggableElement = this.selectedElement as IDraggableElement;
                 if (null != draggableElement)
-                    draggableElement.StartDrag(this.scene.CurrentOpenGLContext, new System.Windows.Point(clientX, clientY));
+                    draggableElement.StartDrag(this.scene.CurrentOpenGLContext, view, 
+                                               new System.Windows.Point(clientX, clientY));
 
                 return true;
             }
@@ -178,6 +200,55 @@ namespace _3DViewer.View
             return false;
 
         }
+
+        #region "IDragListenElement" 
+        public virtual bool OnDragElement(Control view, System.Windows.Point clientPos, 
+                                          SceneElement element, DragState state)
+        {
+            if (false == this.stlModelElement.DataReady)
+                return false;
+
+            if (state != DragState.Dragging)
+                return false;
+
+            OpenGL gl = this.scene.CurrentOpenGLContext;
+            gl.MatrixMode(OpenGL.GL_MODELVIEW);
+            gl.LoadIdentity();
+
+            this.panZoomOribitElement.Transform(gl);
+            this.stlModelElement.Transform(gl);
+
+            Ray ray = Model.Scene.CreateRay(view, clientPos.X, clientPos.Y);
+            Model.Scene.MapRayPointsToModel(ray, gl);
+
+            Vertex normalIntersectionPoint = new Vertex();
+            Vertex intersectionPoint = new Vertex();
+            bool hit = this.stlModelElement.TriangleHitTest(gl, ray, ref intersectionPoint, ref normalIntersectionPoint);
+            if (hit)
+            {
+                this.compassElement.Snap.Enabled = true;
+                this.compassElement.Snap.ParentElements.Clear();
+                this.compassElement.Snap.ParentElements.Add(this.panZoomOribitElement);
+                this.compassElement.Snap.ParentElements.Add(this.stlModelElement);
+
+                this.compassElement.Snap.Vertex = intersectionPoint;
+                this.compassElement.Snap.Normal = normalIntersectionPoint;
+            }
+            else
+            {
+                if (this.compassElement.Snap.Enabled)
+                {
+                    this.compassElement.TopRightMargin.X = view.ActualWidth - clientPos.X;
+                    this.compassElement.TopRightMargin.Y = view.ActualHeight - clientPos.Y;
+                    this.compassElement.Snap.Enabled = false;
+                    this.compassElement.Snap.ParentElements.Clear();
+                }
+            }
+
+            return false;
+        }
+        #endregion "IDragListenElement"
+
 
         #region "Hit Element - Testing"
         CenterElement mousePos = new CenterElement(2, .05f);
@@ -189,7 +260,7 @@ namespace _3DViewer.View
                 gl.MatrixMode(OpenGL.GL_MODELVIEW);
                 gl.LoadIdentity();
 
-                this.panZoomOribit.Transform(gl);
+                this.panZoomOribitElement.Transform(gl);
 
                 double[] world;
                 double clientY = view.ActualHeight - pos.Y;

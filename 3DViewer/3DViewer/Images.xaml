@@ -2,4 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ImageSource x:Key="PerspectiveImage">imgs\perpective.png</ImageSource>
     <ImageSource x:Key="OrthogonalImage">imgs\Orthogonal.png</ImageSource>
+    <ImageSource x:Key="ObjectImage">imgs\object.png</ImageSource>
+    <ImageSource x:Key="TriangleImage">imgs\triangle.png</ImageSource>
+    <ImageSource x:Key="PanImage">imgs\pan.png</ImageSource>
+    <ImageSource x:Key="OrbitImage">imgs\orbit.png</ImageSource>
 </ResourceDictionary>

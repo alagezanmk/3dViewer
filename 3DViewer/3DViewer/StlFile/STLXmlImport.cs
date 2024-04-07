@@ -1,7 +1,9 @@
-﻿using _3DViewer.Model;
-using SharpGL.SceneGraph;
-using System;
+﻿using System;
 using System.Xml;
+
+using SharpGL.SceneGraph;
+
+using _3DViewer.Model;
 
 namespace _3DViewer.File
 {

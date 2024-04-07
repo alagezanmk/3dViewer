@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 
@@ -9,7 +10,7 @@ using SharpGL.SceneGraph.Core;
 namespace _3DViewer.Model
 {
     class PanZoomOribitElement 
-        : SceneElement
+        : SceneContainer
         , IRenderable
         , ISelectableElement
     {
@@ -80,16 +81,18 @@ namespace _3DViewer.Model
         }
 
         #region "ISelectable"
-        public virtual void Transform(OpenGL gl)
+        public virtual void Transform(OpenGL gl, bool rotateOnly = false)
         {
-            this.TranslateScaleTransform(gl);
+            if(false == rotateOnly)
+                this.TranslateScaleTransform(gl);
+
             this.RotateTransform(gl);
         }
 
         public virtual void PopTransform(OpenGL gl)
         {}
 
-        public virtual bool HitTest(OpenGL gl, Vertex pos)
+        public virtual bool HitTest(OpenGL gl, Ray ray)
         {
             return false;
         }
@@ -105,20 +108,34 @@ namespace _3DViewer.Model
             this.Transform(gl);
         }
 
+        public bool PanMouseMode = true;
         public void OnMouseDown(Point pos, bool leftButton, bool rightButton)
         {
             this.startMousePos = pos;
             this.startTranslate = this.translate;
             this.startAngle = this.angle;
 
-            this.panMode = leftButton;
-            this.rotateMode = rightButton;
+            bool ShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+            if (this.PanMouseMode)
+            {
+                if (ShiftPressed)
+                    this.rotateMode = leftButton;
+                else
+                    this.panMode = leftButton;
+            }
+            else
+            {
+                if (ShiftPressed)
+                    this.panMode = leftButton;
+                else
+                    this.rotateMode = leftButton;
+            }
         }
 
         public void OnMouseUp(Point pos, bool leftButton, bool rightButton)
         {
-            this.panMode = rightButton;
-            this.rotateMode = leftButton;
+           this.rotateMode = false;
+           this.panMode = false;
         }
 
         public void OnMouseMove(Point pos, double cx, double cy)

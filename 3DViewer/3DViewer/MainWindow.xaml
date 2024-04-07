@@ -18,6 +18,10 @@
     <Window.DataContext>
         <local:GLViewModel/>
     </Window.DataContext>
+    <Window.InputBindings>
+        <KeyBinding Key="F10"
+                Command="{Binding SelectionModeCommand}"/>
+    </Window.InputBindings>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="267*"/>
@@ -97,6 +101,17 @@
                                   LargeImageSource="imgs\z.png" MinWidth="40"/>
                 </RibbonGroup>
 
+                <RibbonGroup Header="Selection Mode" Height="90.6666666666667" Margin="0" VerticalAlignment="Top" Width="117">
+
+                    <RibbonButton x:Name="MouseMode"  Content="RibbonButton" Margin="-2,2,-44,-52.667" 
+                                  VerticalAlignment="Top" Height="62" Label="Pan" 
+                                  Command="{Binding MouseModeCommand}" 
+                                  LargeImageSource="imgs/pan.png"/>
+                    <RibbonButton x:Name="SelectionMode"  Content="RibbonButton" HorizontalAlignment="Left" Margin="51,-9,-97,-41.667" 
+                        VerticalAlignment="Top" Width="50" Height="62" Label="Triangle" 
+                        Command="{Binding SelectionModeCommand}" 
+                        LargeImageSource="imgs/triangle.png"/>
+                </RibbonGroup>
                 <RibbonGroup Header="Application" Height="87" Margin="0,0,0,3.667" Width="71">
                     <RibbonButton Content="RibbonButton" HorizontalAlignment="Left" Margin="5,0,-55,-66" 
                                   VerticalAlignment="Top" Width="50" Height="66" Label="Quit" 
@@ -104,7 +119,6 @@
                                   Command="{Binding CloseAppCommand}"/>
 
                 </RibbonGroup>
-
             </RibbonTab>
         </Ribbon>
         <WPF:OpenGLControl x:Name="ogl" Margin="0,118,0,0" Grid.ColumnSpan="5" 
@@ -115,9 +129,7 @@
                            Resized="ogl_Resized"                            
                            VerticalAlignment="Stretch" 
                            PreviewMouseLeftButtonDown="onMouse_Down_Up" 
-                           PreviewMouseRightButtonDown="onMouse_Down_Up" 
                            PreviewMouseLeftButtonUp="onMouse_Down_Up" 
-                           PreviewMouseRightButtonUp="onMouse_Down_Up" 
                            PreviewMouseMove="ogl_PreviewMouseMove" 
                            PreviewMouseWheel="ogl_PreviewMouseWheel"/>
     </Grid>
