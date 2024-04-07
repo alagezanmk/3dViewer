@@ -1,5 +1,5 @@
 ﻿using System;
-
+using System.Windows.Controls;
 using SharpGL;
 using SharpGL.SceneGraph;
 using SharpGL.SceneGraph.Core;
@@ -67,14 +67,6 @@ namespace _3DViewer.Model
             gl.PopMatrix();
         }
 
-        bool bbHitTest(Ray ray, Vertex min, Vertex max)
-        {
-            bool hit = ray.point.X >= min.X && ray.point.X <= max.X
-                    && ray.point.Y >= min.Y && ray.point.Y <= max.Y
-                    && ray.point.Z >= min.Z && ray.point.Z <= max.Z;
-            return hit;
-        }
-
         public virtual bool HitTest(OpenGL gl, Ray ray)
         {
             if (!this.DataReady)
@@ -91,7 +83,7 @@ namespace _3DViewer.Model
                 this.triangleSelected = false;
 
             if (false == hit)
-                hit = this.bbHitTest(ray, this.minPos, this.maxPos);
+                hit = Geometry.BBHitTest(ray, this.minPos, this.maxPos);
 
             return hit;
         }
@@ -116,11 +108,11 @@ namespace _3DViewer.Model
                 _getVertex(ref this.trianglesHitVertexes[1], this.vertexes, ref p);
                 _getVertex(ref this.trianglesHitVertexes[2], this.vertexes, ref p);
 
-                hit = rayTriangleIntersect(ray.origin, ray.direction,
-                                           this.trianglesHitVertexes[0],
-                                           this.trianglesHitVertexes[1],
-                                           this.trianglesHitVertexes[2],
-                                           ref intersectionPoint);
+                hit = Geometry.RayTriangleIntersect(ray.origin, ray.direction,
+                                                    this.trianglesHitVertexes[0],
+                                                    this.trianglesHitVertexes[1],
+                                                    this.trianglesHitVertexes[2],
+                                                    ref intersectionPoint);
 
                 if (hit)
                 {
@@ -143,39 +135,6 @@ namespace _3DViewer.Model
                 vertex.Y = vertexes[p++];
                 vertex.Z = vertexes[p++];
             }
-
-            bool rayTriangleIntersect(Vertex origin, Vertex direction,
-                                      Vertex v0, Vertex v1, Vertex v2,
-                                      ref Vertex _intersectionPoint)
-            {
-                const float kEpsilon = 1e-8f;
-
-                Vertex v0v1 = v1 - v0;
-                Vertex v0v2 = v2 - v0;
-                Vertex pvec = direction.VectorProduct(v0v2);
-                float det = v0v1.ScalarProduct(pvec);
-            
-                // if the determinant is negative, the triangle is 'back facing'
-                // if the determinant is close to 0, the ray misses the triangle
-                if (det < kEpsilon)
-                    return false;
-
-                float invDet = 1 / det;
-                Vertex tvec = origin - v0;
-                float u = tvec.ScalarProduct(pvec) * invDet;
-                if (u < 0 || u > 1)
-                    return false;
-
-                Vertex qvec = tvec.VectorProduct(v0v1);
-                float v = direction.ScalarProduct(qvec) * invDet;
-                if (v < 0 || u + v > 1)
-                    return false;
-
-                float t = v0v2.ScalarProduct(qvec) * invDet;
-                _intersectionPoint = origin + direction * t;
-                return true;
-            }
-
             #endregion "Helper methods"
         }
 
@@ -238,6 +197,7 @@ namespace _3DViewer.Model
 
             gl.PopAttrib();
             this.PopTransform(gl);
-        }        
+        }    
+        
     }
 }

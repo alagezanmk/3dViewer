@@ -136,25 +136,7 @@ namespace _3DViewer.Model
             gl.Material(OpenGL.GL_FRONT, OpenGL.GL_SPECULAR, specref);
             gl.Material(OpenGL.GL_FRONT, OpenGL.GL_SHININESS, 10);
             gl.Enable(OpenGL.GL_NORMALIZE);
-        }
-
-        public static Vertex UnProject(OpenGL gl, double clientX, double clientY, float Z)
-        {
-            double[] vertexes = gl.UnProject((double)clientX, clientY, Z);
-            Vertex modelPoint = new Vertex((float)vertexes[0], (float)vertexes[1], (float)vertexes[2]);
-            return modelPoint;
-        }
-
-        public static Vertex UnProject(OpenGL gl, double clientX, double clientY)
-        {
-            byte[] pixels = new byte[sizeof(float)];
-            gl.ReadPixels((int)clientX, (int)clientY, 1, 1, OpenGL.GL_DEPTH_COMPONENT, OpenGL.GL_FLOAT, pixels);
-            float Z = System.BitConverter.ToSingle(pixels, 0);
-
-            double[] vertexes = gl.UnProject((double)clientX, clientY, Z);
-            Vertex modelPoint = new Vertex((float)vertexes[0], (float)vertexes[1], (float)vertexes[2]);
-            return modelPoint;
-        }
+        }       
 
         void  hitTest(OpenGL gl, SceneElement parent,Ray ray, 
                       List<ISelectableElement> selections)
@@ -163,7 +145,7 @@ namespace _3DViewer.Model
             if (null != se)
             {
                 se.Transform(gl);
-                Scene.MapRayPointsToModel(ray, gl);
+                Geometry.MapRayPointsToModel(ray, gl);
 
                 se.Selected = se.HitTest(gl, ray);
                 if (se.Selected)
@@ -182,29 +164,11 @@ namespace _3DViewer.Model
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
             gl.LoadIdentity();
 
-            Ray ray = Scene.CreateRay(view, clientX, clientY);
+            Ray ray = Geometry.CreateRay(view, clientX, clientY);
             List<ISelectableElement> selections = new List<ISelectableElement>();
             this.hitTest(gl, this.SceneContainer, ray, selections);
             return selections;
-        }
-        
-        public static Ray CreateRay(Control view, double clientX, double clientY)
-        {
-            Ray ray = new Ray();
-            ray.client = ray.normClient = new Vertex((float)clientX, (float)clientY, 0f);
-            ray.normClient.Y = (float)(view.ActualHeight - clientY);
-
-            ray.clientWidth = (float)view.ActualWidth;
-            ray.clientHeight = (float)view.ActualHeight;
-            return ray;
-        }
-
-        public static void MapRayPointsToModel(Ray ray, OpenGL gl)
-        {
-            ray.point = UnProject(gl, ray.normClient.X, ray.normClient.Y);
-            ray.origin = UnProject(gl, ray.normClient.X, ray.normClient.Y, 0);
-            ray.direction = ray.point - ray.origin;
-        }
+        }       
     }
 
     #region "Camera Classes"

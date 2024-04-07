@@ -57,6 +57,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Model\Geometry.cs" />
     <Compile Include="Model\IDraggableElement.cs" />
     <Compile Include="Model\IDragElementListener.cs" />
     <Compile Include="Model\RayCastLineElement.cs" />

@@ -79,6 +79,7 @@ namespace _3DViewer.View
             this.scene.InitializeProjection();
             return this.scene.Perspective;
         }
+
         public bool ToggleSelectionMode()
         {
             this.stlModelElement.TriangleSelectionMode = !this.stlModelElement.TriangleSelectionMode;
@@ -218,8 +219,8 @@ namespace _3DViewer.View
             this.panZoomOribitElement.Transform(gl);
             this.stlModelElement.Transform(gl);
 
-            Ray ray = Model.Scene.CreateRay(view, clientPos.X, clientPos.Y);
-            Model.Scene.MapRayPointsToModel(ray, gl);
+            Ray ray = Geometry.CreateRay(view, clientPos.X, clientPos.Y);
+            Geometry.MapRayPointsToModel(ray, gl);
 
             Vertex normalIntersectionPoint = new Vertex();
             Vertex intersectionPoint = new Vertex();
@@ -248,7 +249,6 @@ namespace _3DViewer.View
             return false;
         }
         #endregion "IDragListenElement"
-
 
         #region "Hit Element - Testing"
         CenterElement mousePos = new CenterElement(2, .05f);
