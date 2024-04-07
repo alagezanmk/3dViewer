@@ -15,6 +15,7 @@ namespace _3DViewer.Model
         public Vertex position2 = new Vertex();
         public float width = 3;
 
+        #region "IRenderable"
         public virtual void Render(OpenGL gl, RenderMode renderMode)
         {
             //  Push all matrix, attributes, disable lighting and depth testing.
@@ -39,5 +40,6 @@ namespace _3DViewer.Model
             gl.PopAttrib();
             gl.PopMatrix();
         }
+        #endregion "IRenderable"
     }
 }

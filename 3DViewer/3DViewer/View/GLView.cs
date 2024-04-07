@@ -49,7 +49,7 @@ namespace _3DViewer.View
 
             // Compass
             this.scene.SceneContainer.AddChild(this.compassElement);
-            this.compassElement.originElement = this.panZoomOribitElement;
+            this.compassElement.Snap.Element = this.panZoomOribitElement; 
             this.compassElement.DragListener = this;
         }
 
@@ -237,6 +237,7 @@ namespace _3DViewer.View
             {
                 if (this.compassElement.Snap.Enabled)
                 {
+                    this.compassElement.Snap.Element = this.panZoomOribitElement;
                     this.compassElement.TopRightMargin.X = view.ActualWidth - clientPos.X;
                     this.compassElement.TopRightMargin.Y = view.ActualHeight - clientPos.Y;
                     this.compassElement.Snap.Enabled = false;

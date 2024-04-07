@@ -34,7 +34,6 @@ namespace _3DViewer.Model
         }
 
         #region "ISelectable"
-
         public virtual void Transform(OpenGL gl, bool rotateOnly = false)
         {
             if (rotateOnly)
@@ -104,22 +103,12 @@ namespace _3DViewer.Model
             for (int f = 0; f < faceCount; f++)
             {
                 int p = f * 3 * 3;
-                _getVertex(ref this.trianglesHitVertexes[0], this.vertexes, ref p);
-                _getVertex(ref this.trianglesHitVertexes[1], this.vertexes, ref p);
-                _getVertex(ref this.trianglesHitVertexes[2], this.vertexes, ref p);
-
-                hit = Geometry.TriangleIntersect(ray, this.trianglesHitVertexes[0],
-                                                      this.trianglesHitVertexes[1],
-                                                      this.trianglesHitVertexes[2],
-                                                      ref intersectionPoint);
-
+                Vertex[] vs = this.trianglesHitVertexes;
+                getVertexes(vs, this.vertexes, ref p);
+                hit = Geometry.TriangleIntersect(ray, vs[0], vs[1], vs[2], ref intersectionPoint);
                 if (hit)
                 {
-                    Vertex[] vs = this.trianglesHitVertexes;
-                    Vertex va = vs[0] - vs[1];
-                    Vertex vb = vs[1] - vs[2];
-                    normal = va.VectorProduct(vb);
-                    normal.Normalize();
+                    normal = Geometry.Normal(vs[0], vs[1], vs[2]);
                     break;
                 }
             }
@@ -128,11 +117,18 @@ namespace _3DViewer.Model
             return this.triangleSelected;
 
             #region "Helper methods"
-            void _getVertex(ref Vertex vertex, float[] vertexes, ref int p)
+            void getVertex(ref Vertex vertex, float[] vertexes, ref int p)
             {
                 vertex.X = vertexes[p++];
                 vertex.Y = vertexes[p++];
                 vertex.Z = vertexes[p++];
+            }
+
+            void getVertexes(Vertex[] vs, float[] vertexes, ref int p)
+            {
+                getVertex(ref vs[0], vertexes, ref p);
+                getVertex(ref vs[1], vertexes, ref p);
+                getVertex(ref vs[2], vertexes, ref p);
             }
             #endregion "Helper methods"
         }
@@ -147,6 +143,7 @@ namespace _3DViewer.Model
         }
         #endregion "ISelectable"
 
+        #region "IRenderable"
         public virtual void Render(OpenGL gl, RenderMode renderMode)
         {
             if (!this.DataReady)
@@ -196,7 +193,7 @@ namespace _3DViewer.Model
 
             gl.PopAttrib();
             this.PopTransform(gl);
-        }    
-        
+        }
+        #endregion "IRenderable"
     }
 }

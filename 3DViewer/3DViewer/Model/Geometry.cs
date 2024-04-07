@@ -85,5 +85,17 @@ namespace _3DViewer.Model
             float z = System.BitConverter.ToSingle(pixels, 0);
             return z;
         }
+
+        public static Vertex Normal(Vertex a, Vertex b, Vertex c, bool normalized = true)
+        {
+            Vertex va = a - b;
+            Vertex vb = b - c;
+
+            Vertex normal = va.VectorProduct(vb);
+            if(normalized)
+                normal.Normalize();
+
+            return normal;
+        }
     }
 }

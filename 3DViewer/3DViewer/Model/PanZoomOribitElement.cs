@@ -103,11 +103,14 @@ namespace _3DViewer.Model
         }
         #endregion "ISelectable"
 
+        #region "IRenderable"
         public virtual void Render(OpenGL gl, RenderMode renderMode)
         {
             this.Transform(gl);
         }
+        #endregion "IRenderable"
 
+        #region "Mouse Handler"
         public bool PanMouseMode = true;
         public void OnMouseDown(Point pos, bool leftButton, bool rightButton)
         {
@@ -153,5 +156,6 @@ namespace _3DViewer.Model
             this.scale = Math.Max(0.01, scale);
             this.scale = Math.Min(600, this.scale);
         }
+        #endregion "IRenderable"
     }
 }

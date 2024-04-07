@@ -25,6 +25,7 @@ namespace _3DViewer.Model
         public float width = 3;
         public double size = .5f;
 
+        #region "IRenderable"
         public virtual void Render(OpenGL gl, RenderMode renderMode)
         {
             //  Push all matrix, attributes, disable lighting and depth testing.
@@ -50,5 +51,6 @@ namespace _3DViewer.Model
             gl.PopAttrib();
             gl.PopMatrix();
         }
+        #endregion "IRenderable"
     }
 }

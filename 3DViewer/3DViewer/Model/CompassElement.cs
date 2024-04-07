@@ -13,13 +13,11 @@ namespace _3DViewer.Model
         , IRenderable
         , ISelectableElement
         , IDraggableElement
-    {
-        public PanZoomOribitElement originElement;
-
+    { 
         public class SnapInfo
         {
             public bool Enabled = false;
-            public SceneElement Element;
+            public ISelectableElement Element;
 
             public Vertex Vertex;
             public Vertex Normal;
@@ -32,7 +30,7 @@ namespace _3DViewer.Model
 
             public void Transform(OpenGL gl, bool rotateOnly = false)
             {
-                this.Transform(gl, this.Element, rotateOnly);
+                this.Transform(gl, (SceneElement)this.Element, rotateOnly);
             }
 
             public void Transform(OpenGL gl, SceneElement element, bool rotateOnly = false)
@@ -61,7 +59,7 @@ namespace _3DViewer.Model
             Vertex clientSnapPoint = new Vertex();
             if (this.Snap.Enabled)
             {
-                // Transform parent to Snapped Element
+                // Transform top Parent to Snapped Element
                 this.Snap.Transform(gl);
 
                 // Map Element Snap point to Client point
@@ -111,7 +109,7 @@ namespace _3DViewer.Model
             else
             {
                 // Match with origin Transform
-                this.originElement?.RotateTransform(gl); // Rotate at fixed compass position along origin
+                this.Snap.Element?.Transform(gl, true); // Rotate at fixed compass position along origin
             }
         }
 
@@ -176,6 +174,7 @@ namespace _3DViewer.Model
         }
         #endregion "IDraggable"
 
+        #region "IRenderable"
         public virtual void Render(OpenGL gl, RenderMode renderMode)
         {
             //  Push all matrix, attributes, disable lighting and depth testing.
@@ -273,6 +272,7 @@ namespace _3DViewer.Model
             gl.PopAttrib();
             this.PopTransform(gl);
         }
+        #endregion "IRenderable"
 
         #region "Helper methods"
         void drawArcXZ(OpenGL gl, double cx, double cy, double cz,
