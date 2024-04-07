@@ -108,11 +108,10 @@ namespace _3DViewer.Model
                 _getVertex(ref this.trianglesHitVertexes[1], this.vertexes, ref p);
                 _getVertex(ref this.trianglesHitVertexes[2], this.vertexes, ref p);
 
-                hit = Geometry.RayTriangleIntersect(ray.origin, ray.direction,
-                                                    this.trianglesHitVertexes[0],
-                                                    this.trianglesHitVertexes[1],
-                                                    this.trianglesHitVertexes[2],
-                                                    ref intersectionPoint);
+                hit = Geometry.TriangleIntersect(ray, this.trianglesHitVertexes[0],
+                                                      this.trianglesHitVertexes[1],
+                                                      this.trianglesHitVertexes[2],
+                                                      ref intersectionPoint);
 
                 if (hit)
                 {

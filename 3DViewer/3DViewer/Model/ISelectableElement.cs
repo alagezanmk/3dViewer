@@ -19,6 +19,7 @@ namespace _3DViewer.Model
     public interface ISelectableElement
     {
         void Transform(OpenGL gl, bool rotateOnly = false);
+
         void PopTransform(OpenGL gl);
 
         bool HitTest(OpenGL gl, Ray ray);

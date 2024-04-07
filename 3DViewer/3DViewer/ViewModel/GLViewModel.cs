@@ -306,7 +306,6 @@ namespace _3DViewer.ViewModel
         }
         #endregion "MouseModeCommand"
 
-
         #region "CloseAppCommand"
         private ICommand closeApp;
         public ICommand CloseAppCommand

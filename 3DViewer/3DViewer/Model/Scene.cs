@@ -145,7 +145,7 @@ namespace _3DViewer.Model
             if (null != se)
             {
                 se.Transform(gl);
-                Geometry.MapRayPointsToModel(ray, gl);
+                Geometry.RayCastPointsToModel(ray, gl);
 
                 se.Selected = se.HitTest(gl, ray);
                 if (se.Selected)
@@ -164,7 +164,7 @@ namespace _3DViewer.Model
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
             gl.LoadIdentity();
 
-            Ray ray = Geometry.CreateRay(view, clientX, clientY);
+            Ray ray = Geometry.CreateRayCast(view, clientX, clientY);
             List<ISelectableElement> selections = new List<ISelectableElement>();
             this.hitTest(gl, this.SceneContainer, ray, selections);
             return selections;

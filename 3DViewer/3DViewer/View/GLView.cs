@@ -202,7 +202,7 @@ namespace _3DViewer.View
 
         }
 
-        #region "IDragListenElement" 
+        #region "IDragElementListener" 
         public virtual bool OnDragElement(Control view, System.Windows.Point clientPos, 
                                           SceneElement element, DragState state)
         {
@@ -219,8 +219,8 @@ namespace _3DViewer.View
             this.panZoomOribitElement.Transform(gl);
             this.stlModelElement.Transform(gl);
 
-            Ray ray = Geometry.CreateRay(view, clientPos.X, clientPos.Y);
-            Geometry.MapRayPointsToModel(ray, gl);
+            Ray ray = Geometry.CreateRayCast(view, clientPos.X, clientPos.Y);
+            Geometry.RayCastPointsToModel(ray, gl);
 
             Vertex normalIntersectionPoint = new Vertex();
             Vertex intersectionPoint = new Vertex();
@@ -228,9 +228,7 @@ namespace _3DViewer.View
             if (hit)
             {
                 this.compassElement.Snap.Enabled = true;
-                this.compassElement.Snap.ParentElements.Clear();
-                this.compassElement.Snap.ParentElements.Add(this.panZoomOribitElement);
-                this.compassElement.Snap.ParentElements.Add(this.stlModelElement);
+                this.compassElement.Snap.Element = this.stlModelElement;
 
                 this.compassElement.Snap.Vertex = intersectionPoint;
                 this.compassElement.Snap.Normal = normalIntersectionPoint;
@@ -242,13 +240,12 @@ namespace _3DViewer.View
                     this.compassElement.TopRightMargin.X = view.ActualWidth - clientPos.X;
                     this.compassElement.TopRightMargin.Y = view.ActualHeight - clientPos.Y;
                     this.compassElement.Snap.Enabled = false;
-                    this.compassElement.Snap.ParentElements.Clear();
                 }
             }
 
             return false;
         }
-        #endregion "IDragListenElement"
+        #endregion "IDragElementListener"
 
         #region "Hit Element - Testing"
         CenterElement mousePos = new CenterElement(2, .05f);
@@ -262,24 +259,11 @@ namespace _3DViewer.View
 
                 this.panZoomOribitElement.Transform(gl);
 
-                double[] world;
                 double clientY = view.ActualHeight - pos.Y;
-                unProject(ref this.mousePos.position, .1);
-                unProject(ref this.rayCastLine.position1, 0);
+                this.mousePos.position = Geometry.UnProject(gl, pos.X, clientY, .1f);
 
-                byte[] pixels = new byte[sizeof(float)];
-                gl.ReadPixels((int)pos.X, (int)clientY, 1, 1, OpenGL.GL_DEPTH_COMPONENT, OpenGL.GL_FLOAT, pixels);
-                float Z = System.BitConverter.ToSingle(pixels, 0);
-
-                unProject(ref this.rayCastLine.position2, Z);
-
-                void unProject(ref Vertex v, double z)
-                {
-                    world = gl.UnProject(pos.X, clientY, z);
-                    v.X = (float)world[0];
-                    v.Y = (float)world[1];
-                    v.Z = (float)world[2];
-                }
+                this.rayCastLine.position2 = Geometry.UnProjectPixelHitZ(gl, pos.X, clientY);
+                this.rayCastLine.position1 = Geometry.UnProject(gl, pos.X, clientY, 0);
             }
         }
         #endregion "Hit Element - Testing"

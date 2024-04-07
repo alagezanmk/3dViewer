@@ -19,9 +19,31 @@ namespace _3DViewer.Model
         public class SnapInfo
         {
             public bool Enabled = false;
+            public SceneElement Element;
+
             public Vertex Vertex;
             public Vertex Normal;
-            public List<ISelectableElement> ParentElements = new List<ISelectableElement>();
+
+            public Vertex ClientPoint(OpenGL gl)
+            {
+                Vertex clientPoint = gl.Project(this.Vertex);
+                return clientPoint;
+            }
+
+            public void Transform(OpenGL gl, bool rotateOnly = false)
+            {
+                this.Transform(gl, this.Element, rotateOnly);
+            }
+
+            public void Transform(OpenGL gl, SceneElement element, bool rotateOnly = false)
+            {
+                if (null != element.Parent)
+                    this.Transform(gl, element.Parent, rotateOnly);
+
+                ISelectableElement se = element as ISelectableElement;
+                if (null != se)
+                    se.Transform(gl, rotateOnly);
+            }
         }
 
         public SnapInfo Snap = new SnapInfo();
@@ -40,11 +62,10 @@ namespace _3DViewer.Model
             if (this.Snap.Enabled)
             {
                 // Transform parent to Snapped Element
-                foreach (var se in this.Snap.ParentElements)
-                    se.Transform(gl);
+                this.Snap.Transform(gl);
 
                 // Map Element Snap point to Client point
-                clientSnapPoint = gl.Project(this.Snap.Vertex);
+                clientSnapPoint = this.Snap.ClientPoint(gl);
                 gl.LoadIdentity();
             }
 
@@ -61,16 +82,13 @@ namespace _3DViewer.Model
 
                 double clientX = viewWidth - this.TopRightMargin.X;
                 double clientY = viewHeight - this.TopRightMargin.Y;
-                double[] w = gl.UnProject(clientX, clientY, .9);
-
-                Vertex position = new Vertex((float)w[0], (float)w[1], (float)w[2]);
+                Vertex position = Geometry.UnProject(gl, clientX, clientY, .9f);
                 gl.Translate(position.X, position.Y, position.Z);
             }
             else
             {
                 // Map Client point with current compass Transform
-                double[] w = gl.UnProject(clientSnapPoint.X, clientSnapPoint.Y, .9);
-                Vertex position = new Vertex((float)w[0], (float)w[1], (float)w[2]);
+                Vertex position = Geometry.UnProject(gl, clientSnapPoint.X, clientSnapPoint.Y, .9f);
                 gl.Translate(position.X, position.Y, position.Z);
             }
 
@@ -84,9 +102,9 @@ namespace _3DViewer.Model
 
             if (this.Snap.Enabled)
             {
-                foreach(var se in this.Snap.ParentElements)
-                    se.Transform(gl, true);
+                this.Snap.Transform(gl, true);
 
+                // Orient to Normal of selected triangle
                 Vertex n = this.Snap.Normal;
                 gl.Rotate(180 * (1 - n.X), 180 * (n.Y - 1), 180 * (1 - n.Z));
             }
