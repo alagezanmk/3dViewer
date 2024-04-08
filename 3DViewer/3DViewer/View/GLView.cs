@@ -95,9 +95,11 @@ namespace _3DViewer.View
         public void ResetProjection(string direction = "")
         {
             bool controlPressed = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl);
-            if(controlPressed)
+            bool shiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+            if (controlPressed)
                 this.panZoomOribitElement.Reset();
 
+            float angle = shiftPressed ?180: 90;
             switch (direction)
             {
             default:
@@ -105,15 +107,15 @@ namespace _3DViewer.View
                 break;
 
             case "x":
-                this.panZoomOribitElement.SetRotate(90, 0, 0);
+                this.panZoomOribitElement.SetRotate(angle, 0, 0);
                 break;
 
             case "y":
-                this.panZoomOribitElement.SetRotate(0, 90, 0);
+                this.panZoomOribitElement.SetRotate(0, angle, 0);
                 break;
 
             case "z":
-                this.panZoomOribitElement.SetRotate(0, 0, 90);
+                this.panZoomOribitElement.SetRotate(0, 0, angle);
                 break;
             }
         }
