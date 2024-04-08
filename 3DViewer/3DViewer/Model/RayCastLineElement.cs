@@ -10,7 +10,6 @@ namespace _3DViewer.Model
         : SceneElement,
           IRenderable
     {
-
         public Vertex position1 = new Vertex();
         public Vertex position2 = new Vertex();
         public float width = 3;

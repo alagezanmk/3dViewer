@@ -22,7 +22,7 @@ namespace _3DViewer.Model
             public Vertex Vertex;
             public Vertex Normal;
 
-            public Vertex ClientPoint(OpenGL gl)
+            public Vertex Object2ClientPoint(OpenGL gl)
             {
                 Vertex clientPoint = gl.Project(this.Vertex);
                 return clientPoint;
@@ -63,14 +63,14 @@ namespace _3DViewer.Model
                 this.Snap.Transform(gl);
 
                 // Map Element Snap point to Client point
-                clientSnapPoint = this.Snap.ClientPoint(gl);
+                clientSnapPoint = this.Snap.Object2ClientPoint(gl);
                 gl.LoadIdentity();
             }
 
-            gl.Translate(0, 0, -10f); // Move origin to some depth
-
             if (false ==  this.Snap.Enabled)
             {
+                gl.Translate(0, 0, -10f); // Move origin to some depth
+
                 // Compass Position Top, Right of View
                 var viewport = new int[4];
                 gl.GetInteger(OpenGL.GL_VIEWPORT, viewport);
@@ -122,11 +122,11 @@ namespace _3DViewer.Model
         const float len = .5f;
         const float vertLen = .8f;
 
-        public virtual bool HitTest(OpenGL gl, Ray ray)
+        public virtual bool HitTest(OpenGL gl, RayCast rayCast)
         {
-            bool hit = ray.point.X >= -CompassElement.off && ray.point.X <= -CompassElement.off + CompassElement.len
-                    && ray.point.Y >= -CompassElement.off && ray.point.Y <= -CompassElement.off + CompassElement.len
-                    && ray.point.Z >= 0 && ray.point.Z <= CompassElement.vertLen;
+            bool hit = rayCast.point.X >= -CompassElement.off && rayCast.point.X <= -CompassElement.off + CompassElement.len
+                    && rayCast.point.Y >= -CompassElement.off && rayCast.point.Y <= -CompassElement.off + CompassElement.len
+                    && rayCast.point.Z >= 0 && rayCast.point.Z <= CompassElement.vertLen;
 
             return hit;
         }
@@ -234,7 +234,8 @@ namespace _3DViewer.Model
                     gl.Vertex(0, 0, o);
                 }
 
-                gl.Color(fillColor);
+                gl.Color(fillColor);            
+
                 gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
                 gl.Begin(OpenGL.GL_POLYGON);
                 drawLWing();

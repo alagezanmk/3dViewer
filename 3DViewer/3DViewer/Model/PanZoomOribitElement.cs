@@ -92,7 +92,7 @@ namespace _3DViewer.Model
         public virtual void PopTransform(OpenGL gl)
         {}
 
-        public virtual bool HitTest(OpenGL gl, Ray ray)
+        public virtual bool HitTest(OpenGL gl, RayCast rayCast)
         {
             return false;
         }

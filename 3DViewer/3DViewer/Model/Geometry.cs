@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.Windows.Controls;
 using SharpGL;
 using SharpGL.SceneGraph;
@@ -8,7 +9,7 @@ namespace _3DViewer.Model
 {
     class Geometry
     {
-        public static bool BBHitTest(Ray ray, Vertex min, Vertex max)
+        public static bool BBHitTest(RayCast ray, Vertex min, Vertex max)
         {
             bool hit = ray.point.X >= min.X && ray.point.X <= max.X
                     && ray.point.Y >= min.Y && ray.point.Y <= max.Y
@@ -16,7 +17,7 @@ namespace _3DViewer.Model
             return hit;
         }
 
-        public static bool TriangleIntersect(Ray ray,Vertex v0, Vertex v1, Vertex v2,
+        public static bool TriangleIntersect(RayCast ray,Vertex v0, Vertex v1, Vertex v2,
                                              ref Vertex intersectionPoint)
         {
             const float kEpsilon = 1e-8f;
@@ -45,24 +46,6 @@ namespace _3DViewer.Model
             float t = v0v2.ScalarProduct(qvec) * invDet;
             intersectionPoint = ray.origin + ray.direction * t;
             return true;
-        }
-
-        public static Ray CreateRayCast(Control view, double clientX, double clientY)
-        {
-            Ray ray = new Ray();
-            ray.client = ray.normClient = new Vertex((float)clientX, (float)clientY, 0f);
-            ray.normClient.Y = (float)(view.ActualHeight - clientY);
-
-            ray.clientWidth = (float)view.ActualWidth;
-            ray.clientHeight = (float)view.ActualHeight;
-            return ray;
-        }
-
-        public static void RayCastPointsToModel(Ray ray, OpenGL gl)
-        {
-            ray.point = Geometry.UnProjectPixelHitZ(gl, ray.normClient.X, ray.normClient.Y);
-            ray.origin = Geometry.UnProject(gl, ray.normClient.X, ray.normClient.Y, 0);
-            ray.direction = ray.point - ray.origin;
         }
 
         public static Vertex UnProject(OpenGL gl, double clientX, double clientY, float Z)
@@ -96,6 +79,15 @@ namespace _3DViewer.Model
                 normal.Normalize();
 
             return normal;
+        }
+
+        public static double Distance(Vertex v1, Vertex v2)
+        {
+            double d = Math.Sqrt(
+                        Math.Pow(v2.X - v1.X, 2) +
+                        Math.Pow(v2.Y - v1.Y, 2) +
+                        Math.Pow(v2.Z - v1.Z, 2));
+            return d;
         }
     }
 }

@@ -219,12 +219,12 @@ namespace _3DViewer.View
             this.panZoomOribitElement.Transform(gl);
             this.stlModelElement.Transform(gl);
 
-            Ray ray = Geometry.CreateRayCast(view, clientPos.X, clientPos.Y);
-            Geometry.RayCastPointsToModel(ray, gl);
+            RayCast rayCast = RayCast.Create(view, clientPos.X, clientPos.Y);
+            rayCast.UpdateClientToObjectPoint(gl);
 
             Vertex normalIntersectionPoint = new Vertex();
             Vertex intersectionPoint = new Vertex();
-            bool hit = this.stlModelElement.TriangleHitTest(gl, ray, ref intersectionPoint, ref normalIntersectionPoint);
+            bool hit = this.stlModelElement.TriangleHitTest(gl, rayCast, ref intersectionPoint, ref normalIntersectionPoint);
             if (hit)
             {
                 this.compassElement.Snap.Enabled = true;

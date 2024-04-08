@@ -77,6 +77,9 @@ namespace _3DViewer.Model
             gl.Enable(OpenGL.GL_LIGHT0);
             gl.ShadeModel(OpenGL.GL_SMOOTH);
             gl.Enable(OpenGL.GL_DEPTH_TEST);
+            gl.Enable(OpenGL.GL_BLEND);
+            gl.BlendFunc(OpenGL.GL_SRC_ALPHA, OpenGL.GL_ONE_MINUS_SRC_ALPHA);
+            gl.BlendFunc(OpenGL.GL_SRC_ALPHA, OpenGL.GL_ONE_MINUS_DST_COLOR);           
 
             this.CreateInContext(gl);
             this.Resize(gl, view);
@@ -138,22 +141,22 @@ namespace _3DViewer.Model
             gl.Enable(OpenGL.GL_NORMALIZE);
         }       
 
-        void  hitTest(OpenGL gl, SceneElement parent,Ray ray, 
+        void  hitTest(OpenGL gl, SceneElement parent,RayCast rayCast, 
                       List<ISelectableElement> selections)
         {
             ISelectableElement se = parent as ISelectableElement;
             if (null != se)
             {
                 se.Transform(gl);
-                Geometry.RayCastPointsToModel(ray, gl);
+                rayCast.UpdateClientToObjectPoint(gl);
 
-                se.Selected = se.HitTest(gl, ray);
+                se.Selected = se.HitTest(gl, rayCast);
                 if (se.Selected)
                     selections.Add(se);
             }
 
             foreach (SceneElement e in parent.Children)
-                this.hitTest(gl, e, ray, selections);
+                this.hitTest(gl, e, rayCast, selections);
 
             if (null != se)
                 se.PopTransform(gl);
@@ -164,9 +167,9 @@ namespace _3DViewer.Model
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
             gl.LoadIdentity();
 
-            Ray ray = Geometry.CreateRayCast(view, clientX, clientY);
+            RayCast rayCast = RayCast.Create(view, clientX, clientY);
             List<ISelectableElement> selections = new List<ISelectableElement>();
-            this.hitTest(gl, this.SceneContainer, ray, selections);
+            this.hitTest(gl, this.SceneContainer, rayCast, selections);
             return selections;
         }       
     }

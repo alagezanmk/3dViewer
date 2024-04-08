@@ -60,6 +60,7 @@
     <Compile Include="Model\Geometry.cs" />
     <Compile Include="Model\IDraggableElement.cs" />
     <Compile Include="Model\IDragElementListener.cs" />
+    <Compile Include="Model\RayCast.cs" />
     <Compile Include="Model\RayCastLineElement.cs" />
     <Compile Include="Model\Scene.cs" />
     <Compile Include="Model\ISelectableElement.cs" />
