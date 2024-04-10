@@ -99,7 +99,7 @@ namespace _3DViewer.View
             if (controlPressed)
                 this.panZoomOribitElement.Reset();
 
-            float angle = shiftPressed ?180: 90;
+            float angle = shiftPressed ?-90: 90;
             switch (direction)
             {
             default:
@@ -178,9 +178,9 @@ namespace _3DViewer.View
         }
 
         ISelectableElement selectedElement;
-        bool hitTest(OpenGL gl, Control view, double clientX, double clientY)
+        bool hitTest(OpenGL gl, Control view, double screenX, double screenY)
         {
-            var selections = this.scene.HitTest(gl, view, clientX, clientY);
+            var selections = this.scene.HitTest(gl, view, screenX, screenY);
             if (selections.Count > 0)
             {
                 // Unselect back elements
@@ -194,7 +194,7 @@ namespace _3DViewer.View
                 IDraggableElement draggableElement = this.selectedElement as IDraggableElement;
                 if (null != draggableElement)
                     draggableElement.StartDrag(this.scene.CurrentOpenGLContext, view, 
-                                               new System.Windows.Point(clientX, clientY));
+                                               new System.Windows.Point(screenX, screenY));
 
                 return true;
             }
@@ -205,7 +205,7 @@ namespace _3DViewer.View
         }
 
         #region "IDragElementListener" 
-        public virtual bool OnDragElement(Control view, System.Windows.Point clientPos, 
+        public virtual bool OnDragElement(Control view, System.Windows.Point screenPos, 
                                           SceneElement element, DragState state)
         {
             if (false == this.stlModelElement.DataReady)
@@ -221,8 +221,8 @@ namespace _3DViewer.View
             this.panZoomOribitElement.Transform(gl);
             this.stlModelElement.Transform(gl);
 
-            RayCast rayCast = RayCast.Create(view, clientPos.X, clientPos.Y);
-            rayCast.UpdateClientToObjectPoint(gl);
+            RayCast rayCast = RayCast.Create(view, screenPos.X, screenPos.Y);
+            rayCast.UpdatesScreenToObjectPoint(gl);
 
             Vertex normalIntersectionPoint = new Vertex();
             Vertex intersectionPoint = new Vertex();
@@ -240,9 +240,11 @@ namespace _3DViewer.View
                 if (this.compassElement.Snap.Enabled)
                 {
                     this.compassElement.Snap.Element = this.panZoomOribitElement;
-                    this.compassElement.TopRightMargin.X = view.ActualWidth - clientPos.X;
-                    this.compassElement.TopRightMargin.Y = view.ActualHeight - clientPos.Y;
                     this.compassElement.Snap.Enabled = false;
+
+                    this.compassElement.TopRightMargin.X = view.ActualWidth - screenPos.X;
+                    this.compassElement.TopRightMargin.Y = screenPos.Y = view.ActualHeight;
+                    this.compassElement._StartDrag(screenPos);
                 }
             }
 
@@ -262,11 +264,11 @@ namespace _3DViewer.View
 
                 this.panZoomOribitElement.Transform(gl);
 
-                double clientY = view.ActualHeight - pos.Y;
-                this.mousePos.position = Geometry.UnProject(gl, pos.X, clientY, .1f);
+                double screenY = view.ActualHeight - pos.Y;
+                this.mousePos.position = Geometry.UnProject(gl, pos.X, screenY, .1f);
 
-                this.rayCastLine.position2 = Geometry.UnProjectPixelHitZ(gl, pos.X, clientY);
-                this.rayCastLine.position1 = Geometry.UnProject(gl, pos.X, clientY, 0);
+                this.rayCastLine.position2 = Geometry.UnProjectPixelHitZ(gl, pos.X, screenY);
+                this.rayCastLine.position1 = Geometry.UnProject(gl, pos.X, screenY, 0);
             }
         }
         #endregion "Hit Element - Testing"

@@ -14,6 +14,6 @@ namespace _3DViewer.Model
 
     public interface IDragElementListener
     {
-        bool OnDragElement(Control view, Point clientPos, SceneElement element, DragState state);
+        bool OnDragElement(Control view, Point screenPos, SceneElement element, DragState state);
     }
 }

@@ -188,7 +188,7 @@ namespace _3DViewer.Model
                 // Draw selected triangle
                 System.Drawing.Color oldColor = color;
                 color = System.Drawing.Color.Aqua;
-                gl.Color(color.R, color.G, color.B, (byte)250);
+                gl.Color(color.R, color.G, color.B, (byte)255);
                 gl.DrawArrays(OpenGL.GL_TRIANGLES, this.triangleHitIndex * 3, 3);
 
                 int triangleCount = this.vertexes.Length / (3 * 3);
@@ -202,7 +202,7 @@ namespace _3DViewer.Model
                 }
 
                 color = System.Drawing.Color.Yellow;
-                gl.Color(color.R, color.G, color.B, (byte)100);
+                gl.Color(color.R, color.G, color.B, (byte)200);
                 gl.DrawArrays(OpenGL.GL_TRIANGLES, this.triangleHitIndex * 3, 3);
             }
             else

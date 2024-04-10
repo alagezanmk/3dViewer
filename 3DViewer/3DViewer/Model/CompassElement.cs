@@ -22,10 +22,10 @@ namespace _3DViewer.Model
             public Vertex Vertex;
             public Vertex Normal;
 
-            public Vertex Object2ClientPoint(OpenGL gl)
+            public Vertex Object2ScreenPoint(OpenGL gl)
             {
-                Vertex clientPoint = gl.Project(this.Vertex);
-                return clientPoint;
+                Vertex screenPoint = gl.Project(this.Vertex);
+                return screenPoint;
             }
 
             public void Transform(OpenGL gl, bool rotateOnly = false)
@@ -56,14 +56,14 @@ namespace _3DViewer.Model
             // Start with identify Transform
             gl.LoadIdentity();
 
-            Vertex clientSnapPoint = new Vertex();
+            Vertex screenSnapPoint = new Vertex();
             if (this.Snap.Enabled)
             {
                 // Transform top Parent to Snapped Element
                 this.Snap.Transform(gl);
 
-                // Map Element Snap point to Client point
-                clientSnapPoint = this.Snap.Object2ClientPoint(gl);
+                // Map Element Snap point to Screen point
+                screenSnapPoint = this.Snap.Object2ScreenPoint(gl);
                 gl.LoadIdentity();
             }
 
@@ -78,15 +78,15 @@ namespace _3DViewer.Model
                 int viewWidth = viewport[2];
                 int viewHeight = viewport[3];
 
-                double clientX = viewWidth - this.TopRightMargin.X;
-                double clientY = viewHeight - this.TopRightMargin.Y;
-                Vertex position = Geometry.UnProject(gl, clientX, clientY, .9f);
+                double screenX = viewWidth - this.TopRightMargin.X;
+                double screenY = viewHeight - this.TopRightMargin.Y;
+                Vertex position = Geometry.UnProject(gl, screenX, screenY, .9f);
                 gl.Translate(position.X, position.Y, position.Z);
             }
             else
             {
-                // Map Client point with current compass Transform
-                Vertex position = Geometry.UnProject(gl, clientSnapPoint.X, clientSnapPoint.Y, .9f);
+                // Map Screen point with current compass Transform
+                Vertex position = Geometry.UnProject(gl, screenSnapPoint.X, screenSnapPoint.Y, .9f);
                 gl.Translate(position.X, position.Y, position.Z);
             }
 
@@ -146,24 +146,30 @@ namespace _3DViewer.Model
         Point startTopRightMargin = new Point();
         bool dragMode = false;
 
-        public virtual void StartDrag(OpenGL gl, Control view, Point pos)
-        {
-            this.startMousePos = pos;
-            this.startTopRightMargin = this.TopRightMargin;
-            this.dragMode = true;
 
-            this.DragListener?.OnDragElement(view, pos, this, DragState.Started);
+        public virtual void _StartDrag(Point screenPos)
+        {
+            this.startMousePos = screenPos;
+            this.startTopRightMargin = this.TopRightMargin;
         }
 
-        public virtual bool Drag(OpenGL gl, Control view, System.Windows.Point pos, double cx, double cy)
+        public virtual void StartDrag(OpenGL gl, Control view, Point screenPos)
+        {
+            this._StartDrag(screenPos);
+            this.dragMode = true;
+
+            this.DragListener?.OnDragElement(view, screenPos, this, DragState.Started);
+        }
+
+        public virtual bool Drag(OpenGL gl, Control view, System.Windows.Point screenPos, double cx, double cy)
         {
             if (false == this.dragMode)
                 return false;
 
-            this.TopRightMargin.X = this.startTopRightMargin.X + this.startMousePos.X- pos.X;
-            this.TopRightMargin.Y = this.startTopRightMargin.Y + pos.Y - this.startMousePos.Y;
+            this.TopRightMargin.X = this.startTopRightMargin.X + this.startMousePos.X - screenPos.X;
+            this.TopRightMargin.Y = this.startTopRightMargin.Y + screenPos.Y - this.startMousePos.Y;
 
-            this.DragListener?.OnDragElement(view, pos, this, DragState.Dragging);
+            this.DragListener?.OnDragElement(view, screenPos, this, DragState.Dragging);
             return true;
         }
 

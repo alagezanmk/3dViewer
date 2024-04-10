@@ -48,17 +48,17 @@ namespace _3DViewer.Model
             return true;
         }
 
-        public static Vertex UnProject(OpenGL gl, double clientX, double clientY, float Z)
+        public static Vertex UnProject(OpenGL gl, double screenX, double screenY, float Z)
         {
-            double[] vertexes = gl.UnProject((double)clientX, clientY, Z);
+            double[] vertexes = gl.UnProject((double)screenX, screenY, Z);
             Vertex modelPoint = new Vertex((float)vertexes[0], (float)vertexes[1], (float)vertexes[2]);
             return modelPoint;
         }
 
-        public static Vertex UnProjectPixelHitZ(OpenGL gl, double clientX, double clientY)
+        public static Vertex UnProjectPixelHitZ(OpenGL gl, double screenX, double screenY)
         {
-            float Z = Geometry.ReadPixelHitZ(gl, (int)clientX, (int)clientY);
-            return UnProject(gl, clientX, clientY, Z);
+            float Z = Geometry.ReadPixelHitZ(gl, (int)screenX, (int)screenY);
+            return UnProject(gl, screenX, screenY, Z);
         }
 
         public static float ReadPixelHitZ(OpenGL gl, int x, int y)
@@ -75,7 +75,7 @@ namespace _3DViewer.Model
             Vertex vb = b - c;
 
             Vertex normal = va.VectorProduct(vb);
-            if(normalized)
+            if (normalized)
                 normal.Normalize();
 
             return normal;

@@ -10,27 +10,27 @@ namespace _3DViewer.Model
         public Vertex point;         // Object hit point
         public Vertex direction;
 
-        public Vertex client;
-        public Vertex normClient;
+        public Vertex screen;
+        public Vertex normScreen;
 
-        public float clientWidth;
-        public float clientHeight;
+        public float screenWidth;
+        public float screenHeight;
 
-        public static RayCast Create(Control view, double clientX, double clientY)
+        public static RayCast Create(Control view, double screenX, double screenY)
         {
             RayCast ray = new RayCast();
-            ray.client = ray.normClient = new Vertex((float)clientX, (float)clientY, 0f);
-            ray.normClient.Y = (float)(view.ActualHeight - clientY);
+            ray.screen = ray.normScreen = new Vertex((float)screenX, (float)screenY, 0f);
+            ray.normScreen.Y = (float)(view.ActualHeight - screenY);
 
-            ray.clientWidth = (float)view.ActualWidth;
-            ray.clientHeight = (float)view.ActualHeight;
+            ray.screenWidth = (float)view.ActualWidth;
+            ray.screenHeight = (float)view.ActualHeight;
             return ray;
         }
 
-        public void UpdateClientToObjectPoint(OpenGL gl)
+        public void UpdatesScreenToObjectPoint(OpenGL gl)
         {
-            this.point = Geometry.UnProjectPixelHitZ(gl, this.normClient.X, this.normClient.Y);
-            this.origin = Geometry.UnProject(gl, this.normClient.X, this.normClient.Y, 0);
+            this.point = Geometry.UnProjectPixelHitZ(gl, this.normScreen.X, this.normScreen.Y);
+            this.origin = Geometry.UnProject(gl, this.normScreen.X, this.normScreen.Y, 0);
             this.direction = this.point - this.origin;
         }
 

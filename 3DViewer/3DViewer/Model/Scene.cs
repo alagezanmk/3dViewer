@@ -148,7 +148,7 @@ namespace _3DViewer.Model
             if (null != se)
             {
                 se.Transform(gl);
-                rayCast.UpdateClientToObjectPoint(gl);
+                rayCast.UpdatesScreenToObjectPoint(gl);
 
                 se.Selected = se.HitTest(gl, rayCast);
                 if (se.Selected)
@@ -162,12 +162,12 @@ namespace _3DViewer.Model
                 se.PopTransform(gl);
         }
 
-        public List<ISelectableElement> HitTest(OpenGL gl, Control view, double clientX, double clientY)
+        public List<ISelectableElement> HitTest(OpenGL gl, Control view, double screenX, double screenY)
         {
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
             gl.LoadIdentity();
 
-            RayCast rayCast = RayCast.Create(view, clientX, clientY);
+            RayCast rayCast = RayCast.Create(view, screenX, screenY);
             List<ISelectableElement> selections = new List<ISelectableElement>();
             this.hitTest(gl, this.SceneContainer, rayCast, selections);
             return selections;
