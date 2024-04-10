@@ -34,14 +34,14 @@ namespace _3DViewer.View
             #region "Hit Element - Testing"
             // ***For testing mouse click point and ray Cast origin and direction
             // World Center 
-            CenterElement worldCenter = new CenterElement(2, .5f);
+            PlusElement worldCenter = new PlusElement(2, .5f);
             worldCenter.color = Color.Red;
             worldCenter.position.Z += 1.5f;
-            //this.panZoomOribitElement.AddChild(worldCenter);
+            this.panZoomOribitElement.AddChild(worldCenter);
 
             // Mouse Click Postion - 
-            //this.panZoomOribitElement.AddChild(this.mousePos);     
-            //this.panZoomOribitElement.AddChild(this.rayCastLine);  
+            this.panZoomOribitElement.AddChild(this.mouseClick);     
+            this.panZoomOribitElement.AddChild(this.lineElement);  
             #endregion "Hit Element - Testing"
 
             // STL Model
@@ -222,11 +222,13 @@ namespace _3DViewer.View
             this.stlModelElement.Transform(gl);
 
             RayCast rayCast = RayCast.Create(view, screenPos.X, screenPos.Y);
-            rayCast.UpdatesScreenToObjectPoint(gl);
+            rayCast.UpdateObjectPoint(gl);
 
             Vertex normalIntersectionPoint = new Vertex();
             Vertex intersectionPoint = new Vertex();
-            bool hit = this.stlModelElement.TriangleHitTest(gl, rayCast, ref intersectionPoint, ref normalIntersectionPoint);
+            bool hit = this.stlModelElement.TriangleHitTest(gl, rayCast, 
+                                                            ref intersectionPoint, 
+                                                            ref normalIntersectionPoint);
             if (hit)
             {
                 this.compassElement.Snap.Enabled = true;
@@ -243,8 +245,9 @@ namespace _3DViewer.View
                     this.compassElement.Snap.Enabled = false;
 
                     this.compassElement.TopRightMargin.X = view.ActualWidth - screenPos.X;
-                    this.compassElement.TopRightMargin.Y = screenPos.Y = view.ActualHeight;
-                    this.compassElement._StartDrag(screenPos);
+                    this.compassElement.TopRightMargin.Y = screenPos.Y;
+
+                    this.compassElement._StartDrag(view, screenPos);
                 }
             }
 
@@ -253,8 +256,8 @@ namespace _3DViewer.View
         #endregion "IDragElementListener"
 
         #region "Hit Element - Testing"
-        CenterElement mousePos = new CenterElement(2, .05f);
-        RayCastLineElement rayCastLine = new RayCastLineElement();
+        PlusElement mouseClick = new PlusElement(2, .05f);
+        LineElement lineElement = new LineElement();
         void testHit(OpenGL gl, Control view, System.Windows.Point pos, bool leftButton)
         {
             if (leftButton)
@@ -265,10 +268,12 @@ namespace _3DViewer.View
                 this.panZoomOribitElement.Transform(gl);
 
                 double screenY = view.ActualHeight - pos.Y;
-                this.mousePos.position = Geometry.UnProject(gl, pos.X, screenY, .1f);
+                this.mouseClick.position = Geometry.UnProject(gl, pos.X, screenY, .1f);
 
-                this.rayCastLine.position2 = Geometry.UnProjectPixelHitZ(gl, pos.X, screenY);
-                this.rayCastLine.position1 = Geometry.UnProject(gl, pos.X, screenY, 0);
+                this.lineElement.position2 = Geometry.UnProjectPixelHitZ(gl, pos.X, screenY);
+                this.lineElement.position1 = Geometry.UnProject(gl, pos.X, screenY, 0);
+
+                this.mouseClick.position = this.lineElement.position2;
             }
         }
         #endregion "Hit Element - Testing"

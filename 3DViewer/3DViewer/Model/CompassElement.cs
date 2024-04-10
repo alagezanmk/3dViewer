@@ -99,7 +99,7 @@ namespace _3DViewer.Model
             {
                 // Orient to Normal of selected triangle
                 Vertex n = this.Snap.Normal;
-                gl.Rotate(90 * (1 - n.X), 90 * (n.Y - 1), 90 * (1 - n.Z));
+                gl.Rotate(90 * n.X, 90 * n.Y, 90 * n.Z);
             }
         }
 
@@ -132,20 +132,19 @@ namespace _3DViewer.Model
         #region "IDraggable"
         public IDragElementListener DragListener;
 
-        Point startMousePos;
-        Point startTopRightMargin = new Point();
         bool dragMode = false;
+        Point dragOffSet;
 
-
-        public virtual void _StartDrag(Point screenPos)
+        public void _StartDrag(Control view, Point screenPos)
         {
-            this.startMousePos = screenPos;
-            this.startTopRightMargin = this.TopRightMargin;
+            double originX = view.ActualWidth - this.TopRightMargin.X;          // OriginX from margin
+            this.dragOffSet = new Point(screenPos.X - originX,                  //  offset from mouse pos to origin
+                                        screenPos.Y - this.TopRightMargin.Y);    
         }
 
         public virtual void StartDrag(OpenGL gl, Control view, Point screenPos)
         {
-            this._StartDrag(screenPos);
+            this._StartDrag(view, screenPos);
             this.dragMode = true;
 
             this.DragListener?.OnDragElement(view, screenPos, this, DragState.Started);
@@ -156,10 +155,12 @@ namespace _3DViewer.Model
             if (false == this.dragMode)
                 return false;
 
-            this.TopRightMargin.X = this.startTopRightMargin.X + this.startMousePos.X - screenPos.X;
-            this.TopRightMargin.Y = this.startTopRightMargin.Y + screenPos.Y - this.startMousePos.Y;
+            if (false == this.DragListener?.OnDragElement(view, screenPos, this, DragState.Dragging))
+            {
+                this.TopRightMargin.X = view.ActualWidth - screenPos.X + this.dragOffSet.X;
+                this.TopRightMargin.Y = screenPos.Y - this.dragOffSet.Y;
+            }
 
-            this.DragListener?.OnDragElement(view, screenPos, this, DragState.Dragging);
             return true;
         }
 

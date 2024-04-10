@@ -6,13 +6,24 @@ using SharpGL.SceneGraph.Core;
 
 namespace _3DViewer.Model
 {
-    class RayCastLineElement
+    class PlusElement 
         : SceneElement,
           IRenderable
     {
-        public Vertex position1 = new Vertex();
-        public Vertex position2 = new Vertex();
+        public PlusElement()
+        { }
+
+        public PlusElement(float width, double size)
+        {
+            this.width = width;
+            this.size = size;
+        }
+
+        public GLColor color = Color.Green;
+        public Vertex position = new Vertex();
+
         public float width = 3;
+        public double size = .5f;
 
         #region "IRenderable"
         public virtual void Render(OpenGL gl, RenderMode renderMode)
@@ -28,12 +39,13 @@ namespace _3DViewer.Model
 
             gl.LineWidth(this.width);
             gl.Begin(OpenGL.GL_LINES);
+            gl.Color(this.color.R, this.color.G, this.color.B);            
 
-            GLColor color = Color.Aqua;
-            gl.Color(color.R, color.G, color.B);
+            gl.Vertex(position.X - size, position.Y, position.Z);
+            gl.Vertex(position.X + size, position.Y, position.Z);
 
-            gl.Vertex(position1.X, position1.Y, position1.Z);
-            gl.Vertex(position2.X, position2.Y, position2.Z);
+            gl.Vertex(position.X, position.Y - size, position.Z);
+            gl.Vertex(position.X, position.Y + size, position.Z);
             gl.End();
 
             gl.PopAttrib();

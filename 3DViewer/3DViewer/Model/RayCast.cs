@@ -27,7 +27,7 @@ namespace _3DViewer.Model
             return ray;
         }
 
-        public void UpdatesScreenToObjectPoint(OpenGL gl)
+        public void UpdateObjectPoint(OpenGL gl)
         {
             this.point = Geometry.UnProjectPixelHitZ(gl, this.normScreen.X, this.normScreen.Y);
             this.origin = Geometry.UnProject(gl, this.normScreen.X, this.normScreen.Y, 0);

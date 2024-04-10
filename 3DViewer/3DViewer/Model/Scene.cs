@@ -148,7 +148,7 @@ namespace _3DViewer.Model
             if (null != se)
             {
                 se.Transform(gl);
-                rayCast.UpdatesScreenToObjectPoint(gl);
+                rayCast.UpdateObjectPoint(gl);
 
                 se.Selected = se.HitTest(gl, rayCast);
                 if (se.Selected)

@@ -61,13 +61,13 @@
     <Compile Include="Model\IDraggableElement.cs" />
     <Compile Include="Model\IDragElementListener.cs" />
     <Compile Include="Model\RayCast.cs" />
-    <Compile Include="Model\RayCastLineElement.cs" />
+    <Compile Include="Model\LineElement.cs" />
     <Compile Include="Model\Scene.cs" />
     <Compile Include="Model\ISelectableElement.cs" />
     <Compile Include="ViewModel\GLViewModel.cs" />
     <Compile Include="ViewModel\base\ModelCommand.cs" />
     <Compile Include="Model\PanZoomOribitElement.cs" />
-    <Compile Include="Model\CenterElement.cs" />
+    <Compile Include="Model\PlusElement.cs" />
     <Compile Include="Model\CompassElement.cs" />
     <Compile Include="Model\STLData.cs" />
     <Compile Include="StlFile\STLFile.cs" />
