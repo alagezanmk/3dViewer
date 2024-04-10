@@ -65,9 +65,12 @@ namespace _3DViewer.Model
                 // Map Element Snap point to Screen point
                 screenSnapPoint = this.Snap.Object2ScreenPoint(gl);
                 gl.LoadIdentity();
-            }
 
-            if (false ==  this.Snap.Enabled)
+                // Map Screen point with current compass Transform
+                Vertex position = Geometry.UnProject(gl, screenSnapPoint.X, screenSnapPoint.Y, .9f);
+                gl.Translate(position.X, position.Y, position.Z);
+            }
+            else
             {
                 gl.Translate(0, 0, -10f); // Move origin to some depth
 
@@ -75,18 +78,9 @@ namespace _3DViewer.Model
                 var viewport = new int[4];
                 gl.GetInteger(OpenGL.GL_VIEWPORT, viewport);
 
-                int viewWidth = viewport[2];
-                int viewHeight = viewport[3];
-
-                double screenX = viewWidth - this.TopRightMargin.X;
-                double screenY = viewHeight - this.TopRightMargin.Y;
+                double screenX = viewport[2] - this.TopRightMargin.X;
+                double screenY = viewport[3] - this.TopRightMargin.Y;
                 Vertex position = Geometry.UnProject(gl, screenX, screenY, .9f);
-                gl.Translate(position.X, position.Y, position.Z);
-            }
-            else
-            {
-                // Map Screen point with current compass Transform
-                Vertex position = Geometry.UnProject(gl, screenSnapPoint.X, screenSnapPoint.Y, .9f);
                 gl.Translate(position.X, position.Y, position.Z);
             }
 
@@ -98,18 +92,14 @@ namespace _3DViewer.Model
 
             gl.Scale(scale, scale, scale);
 
+            // Rotate at fixed compass position along origin
+            this.Snap.Transform(gl, true);
+
             if (this.Snap.Enabled)
             {
-                this.Snap.Transform(gl, true);
-
                 // Orient to Normal of selected triangle
                 Vertex n = this.Snap.Normal;
-                gl.Rotate(180 * (1 - n.X), 180 * (n.Y - 1), 180 * (1 - n.Z));
-            }
-            else
-            {
-                // Match with origin Transform
-                this.Snap.Element?.Transform(gl, true); // Rotate at fixed compass position along origin
+                gl.Rotate(90 * (1 - n.X), 90 * (n.Y - 1), 90 * (1 - n.Z));
             }
         }
 

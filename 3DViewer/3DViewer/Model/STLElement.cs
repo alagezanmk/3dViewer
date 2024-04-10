@@ -41,7 +41,7 @@ namespace _3DViewer.Model
 
             gl.PushMatrix();
 
-            // Scale to minimal size
+            // Scale to model to size 3 to 7
             double m = Math.Abs(this.maxPos.X - this.minPos.X);
             double v = Math.Abs(this.maxPos.Y - this.minPos.Y);
             m = Math.Max(m, v);
@@ -49,10 +49,10 @@ namespace _3DViewer.Model
             v = Math.Abs(this.maxPos.Z - this.minPos.Z);
             m = Math.Max(m, v);
 
-            double ms = Math.Min(m, 3);
-            double _scale = ms / m;
+            double ms = Math.Min(m, 7);
+            ms = Math.Max(ms, 3);
 
-            double scale = Math.Min(1, _scale);
+            double scale = ms / m;
             gl.Scale(scale, scale, scale);
 
             // Move Shape(X,Y-Center, min-Z) to origin
